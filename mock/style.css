@@ -1,0 +1,425 @@
+/* タスク管理アプリ 画面モック用のスタイル */
+
+:root {
+  --bg: #f1f3f6;
+  --surface: #ffffff;
+  --column-bg: #e4e8ee;
+  --text: #1f2933;
+  --text-sub: #5b6875;
+  --border: #c5ccd6;
+  --primary: #1d5fd1;
+  --danger: #c62828;
+  --focus: #0b3fa8;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding-bottom: 72px; /* 下のモック用パネルの分 */
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Yu Gothic UI", "Meiryo", "Hiragino Sans", sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+/* キーボードで選んでいる場所は、太い枠線で示す */
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ---------- 上部 ---------- */
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.app-header h1 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.header-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+/* ---------- ボタン ---------- */
+
+.button {
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.button:hover {
+  background: #eef1f5;
+}
+
+.button-primary {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: #fff;
+}
+
+.button-primary:hover {
+  background: #174fb0;
+}
+
+.button-danger {
+  border-color: var(--danger);
+  background: var(--danger);
+  color: #fff;
+}
+
+.button-danger:hover {
+  background: #a31f1f;
+}
+
+.button-danger-outline {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.button-danger-outline:hover {
+  background: #fdecec;
+}
+
+/* ---------- お知らせ欄 ---------- */
+
+.notice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 12px 24px 0;
+  padding: 10px 14px;
+  border: 1px solid #e0a0a0;
+  border-left: 6px solid var(--danger);
+  border-radius: 6px;
+  background: #fdecec;
+}
+
+.notice[hidden] {
+  display: none;
+}
+
+/* ---------- ボード ---------- */
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+  padding: 16px 24px;
+}
+
+.loading {
+  grid-column: 1 / -1;
+  padding: 80px 0;
+  text-align: center;
+  color: var(--text-sub);
+  font-size: 18px;
+}
+
+.column {
+  padding: 12px;
+  border-radius: 10px;
+  background: var(--column-bg);
+}
+
+.column-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.column h2 {
+  flex: 1;
+  margin: 0;
+  font-size: 16px;
+}
+
+.sort-button {
+  padding: 2px 8px;
+  border: 1px solid #8fa0b5;
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text-sub);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.sort-button:hover:not(:disabled) {
+  background: #eef1f5;
+}
+
+.sort-button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 40px;
+}
+
+.empty {
+  margin: 8px 0;
+  text-align: center;
+  color: #8a95a1;
+}
+
+/* ---------- カード ---------- */
+
+.card {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  cursor: grab;
+}
+
+.card:hover {
+  border-color: #8fa0b5;
+}
+
+.card.dragging {
+  opacity: 0.4;
+}
+
+/* キーボードでつかんでいるカード */
+.card.grabbed {
+  border: 2px dashed var(--focus);
+  background: #eaf1ff;
+}
+
+.card-title {
+  overflow-wrap: anywhere;
+}
+
+.card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--text-sub);
+}
+
+.card-meta:empty {
+  display: none;
+}
+
+.due.overdue {
+  color: var(--danger);
+  font-weight: bold;
+}
+
+/* 優先度の札。色に加えて「高・中・低」の文字でも示す */
+.priority {
+  padding: 0 8px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.priority-high {
+  background: #fde0e0;
+  color: #a31f1f;
+}
+
+.priority-medium {
+  background: #fdf0c8;
+  color: #7a5200;
+}
+
+.priority-low {
+  background: #dcecff;
+  color: #174fb0;
+}
+
+.grab-hint {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--focus);
+}
+
+/* ドラッグ中に、カードが入る位置を示す線 */
+.drop-line {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--primary);
+}
+
+.add-button {
+  width: 100%;
+  margin-top: 10px;
+  padding: 8px;
+  border: 1px dashed #8fa0b5;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-sub);
+  font: inherit;
+  cursor: pointer;
+}
+
+.add-button:hover {
+  background: rgba(255, 255, 255, 0.6);
+}
+
+/* ---------- 入力欄（S-2 と S-3 で共通） ---------- */
+
+.add-form {
+  margin-top: 10px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.field {
+  margin-bottom: 10px;
+}
+
+.field label {
+  display: block;
+  margin-bottom: 2px;
+  font-size: 13px;
+  color: var(--text-sub);
+}
+
+.field input,
+.field textarea,
+.field select {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font: inherit;
+}
+
+.field input[type="date"],
+.field select {
+  width: auto;
+  min-width: 160px;
+}
+
+.field textarea {
+  resize: vertical;
+}
+
+.field .invalid {
+  border-color: var(--danger);
+}
+
+.error {
+  margin: 2px 0 0;
+  font-size: 13px;
+  color: var(--danger);
+}
+
+.form-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* ---------- ダイアログ ---------- */
+
+.dialog {
+  width: 480px;
+  max-width: calc(100vw - 32px);
+  padding: 20px 24px;
+  border: none;
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  color: var(--text);
+}
+
+.dialog-small {
+  width: 420px;
+}
+
+.dialog::backdrop {
+  background: rgba(20, 30, 45, 0.5);
+}
+
+.dialog h2 {
+  margin: 0 0 14px;
+  font-size: 18px;
+}
+
+.dialog p {
+  margin: 0 0 12px;
+}
+
+.dialog-buttons {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.import-file-info {
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: var(--bg);
+  overflow-wrap: anywhere;
+}
+
+/* ---------- モック用の表示切り替え（本番には付けない） ---------- */
+
+.mock-panel {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 24px;
+  border-top: 2px dashed #9a7b00;
+  background: #fff8d6;
+  font-size: 13px;
+}
+
+.mock-panel button {
+  padding: 3px 10px;
+  border: 1px solid #9a7b00;
+  border-radius: 4px;
+  background: #fff;
+  font: inherit;
+  cursor: pointer;
+}

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>タスク管理（画面モック）</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- S-1 ボード画面：上部 -->
+  <header class="app-header">
+    <h1>タスク管理</h1>
+    <div class="header-buttons">
+      <button type="button" id="export-button" class="button">書き出し</button>
+      <button type="button" id="import-button" class="button">読み込み</button>
+      <input type="file" id="import-file" accept=".json,application/json" hidden>
+    </div>
+  </header>
+
+  <!-- お知らせ欄：知らせることがないときは出さない -->
+  <div id="notice" class="notice" role="alert" hidden>
+    <span id="notice-text"></span>
+    <button type="button" id="notice-reload" class="button" hidden>再読み込み</button>
+  </div>
+
+  <!-- S-1 ボード画面：3つのカラム（中身は script.js が作る） -->
+  <main id="board" class="board"></main>
+
+  <!-- キーボードでカードを動かしたときに、読み上げソフトへ伝える欄 -->
+  <div id="live" class="visually-hidden" aria-live="polite"></div>
+
+  <!-- S-3 編集ダイアログ -->
+  <dialog id="edit-dialog" class="dialog" aria-labelledby="edit-dialog-title">
+    <form id="edit-form" novalidate>
+      <h2 id="edit-dialog-title">カードを編集</h2>
+      <div id="edit-fields"></div>
+      <div class="dialog-buttons">
+        <button type="button" id="edit-delete" class="button button-danger-outline">削除</button>
+        <span class="spacer"></span>
+        <button type="button" id="edit-cancel" class="button">キャンセル</button>
+        <button type="submit" class="button button-primary">保存</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- S-4 削除確認ダイアログ -->
+  <dialog id="delete-dialog" class="dialog dialog-small" aria-labelledby="delete-dialog-text">
+    <p id="delete-dialog-text"></p>
+    <div class="dialog-buttons">
+      <span class="spacer"></span>
+      <button type="button" id="delete-cancel" class="button" autofocus>キャンセル</button>
+      <button type="button" id="delete-ok" class="button button-danger">削除する</button>
+    </div>
+  </dialog>
+
+  <!-- S-5 読み込み確認ダイアログ -->
+  <dialog id="import-dialog" class="dialog dialog-small" aria-labelledby="import-dialog-text">
+    <p id="import-dialog-text">今のボードは、読み込んだ内容で置き換わります。よろしいですか？</p>
+    <p id="import-dialog-file" class="import-file-info"></p>
+    <div class="dialog-buttons">
+      <span class="spacer"></span>
+      <button type="button" id="import-cancel" class="button" autofocus>キャンセル</button>
+      <button type="button" id="import-ok" class="button button-primary">置き換える</button>
+    </div>
+  </dialog>
+
+  <!-- ここから下はモック専用。本番のアプリには付けない -->
+  <aside class="mock-panel">
+    <strong>モック用の表示切り替え</strong>
+    <button type="button" data-mock="normal">通常に戻す</button>
+    <button type="button" data-mock="sample">サンプルのカードに戻す</button>
+    <button type="button" data-mock="empty">カードを全部なくす</button>
+    <button type="button" data-mock="save-error">保存に失敗した</button>
+    <button type="button" data-mock="offline">サーバーにつながらない（第2段階）</button>
+    <button type="button" data-mock="loading">読み込み中（第2段階）</button>
+    <button type="button" data-mock="bad-file">読み込めないファイル</button>
+  </aside>
+
+  <script src="script.js"></script>
+</body>
+</html>
