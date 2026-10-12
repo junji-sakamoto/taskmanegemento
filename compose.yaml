@@ -1,0 +1,23 @@
+# タスク管理アプリのデータベース（PostgreSQL）を動かす設定。
+# 起動: docker compose up -d    停止: docker compose down
+# 接続情報は、同じフォルダの .env から読む。
+
+services:
+  db:
+    image: postgres:18
+    container_name: taskmanagement-db
+    env_file: .env
+    ports:
+      # 同じパソコンからの接続だけを受け付ける
+      - "127.0.0.1:5432:5432"
+    volumes:
+      # コンテナを消しても、データが残るようにする
+      - db-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  db-data:
