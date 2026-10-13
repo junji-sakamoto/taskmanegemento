@@ -12,6 +12,13 @@ dist
 dist-ssr
 *.local
 
+# Vite のひな形についてきた見本用のファイル。アプリでは使っていない
+/src/App.css
+/src/assets/hero.png
+/src/assets/react.svg
+/src/assets/vite.svg
+/public/icons.svg
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
