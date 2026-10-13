@@ -1,0 +1,180 @@
+/* タスク管理アプリのスタイル。色と見た目は、見本（mock/style.css）を引き継ぐ */
+
+:root {
+  --bg: #f1f3f6;
+  --surface: #ffffff;
+  --column-bg: #e4e8ee;
+  --text: #1f2933;
+  --text-sub: #5b6875;
+  --border: #c5ccd6;
+  --primary: #1d5fd1;
+  --danger: #c62828;
+  --focus: #0b3fa8;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Yu Gothic UI", "Meiryo", "Hiragino Sans", sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+/* キーボードで選んでいる場所は、太い枠線で示す */
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* ---------- 上部 ---------- */
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.app-header h1 {
+  margin: 0;
+  font-size: 20px;
+}
+
+/* ---------- ボタン ---------- */
+
+.button {
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.button:hover {
+  background: #eef1f5;
+}
+
+/* ---------- お知らせ欄 ---------- */
+
+.notice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 12px 24px 0;
+  padding: 10px 14px;
+  border: 1px solid #e0a0a0;
+  border-left: 6px solid var(--danger);
+  border-radius: 6px;
+  background: #fdecec;
+}
+
+/* ---------- ボード ---------- */
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+  padding: 16px 24px;
+}
+
+.loading {
+  grid-column: 1 / -1;
+  padding: 80px 0;
+  text-align: center;
+  color: var(--text-sub);
+  font-size: 18px;
+}
+
+.column {
+  padding: 12px;
+  border-radius: 10px;
+  background: var(--column-bg);
+}
+
+.column-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.column h2 {
+  flex: 1;
+  margin: 0;
+  font-size: 16px;
+}
+
+.card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 40px;
+}
+
+.empty {
+  margin: 8px 0;
+  text-align: center;
+  color: #8a95a1;
+}
+
+/* ---------- カード ---------- */
+
+.card {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.card-title {
+  overflow-wrap: anywhere;
+}
+
+.card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--text-sub);
+}
+
+.due.overdue {
+  color: var(--danger);
+  font-weight: bold;
+}
+
+/* 優先度の札。色に加えて「高・中・低」の文字でも示す */
+.priority {
+  padding: 0 8px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.priority-high {
+  background: #fde0e0;
+  color: #a31f1f;
+}
+
+.priority-medium {
+  background: #fdf0c8;
+  color: #7a5200;
+}
+
+.priority-low {
+  background: #dcecff;
+  color: #174fb0;
+}
