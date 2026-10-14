@@ -245,6 +245,18 @@ body {
   border-color: #8fa0b5;
 }
 
+/* ドラッグ中、カードが入る位置に残る影 */
+.card.dragging {
+  opacity: 0.4;
+}
+
+/* ドラッグ中に、マウスについてくるカード */
+.card.drag-overlay {
+  border-color: #8fa0b5;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
+  cursor: grabbing;
+}
+
 .card-title {
   overflow-wrap: anywhere;
 }
