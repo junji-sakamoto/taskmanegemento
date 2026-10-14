@@ -5,6 +5,7 @@ import java.util.UUID;
 import jakarta.validation.Valid;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -34,6 +35,12 @@ public class CardController {
 	@PatchMapping("/{id}")
 	public CardResponse updateCard(@PathVariable UUID id, @Valid @RequestBody CardUpdateRequest request) {
 		return cardService.updateCard(id, request);
+	}
+
+	@DeleteMapping("/{id}")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	public void deleteCard(@PathVariable UUID id) {
+		cardService.deleteCard(id);
 	}
 
 	@PutMapping("/{id}/position")

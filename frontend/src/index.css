@@ -73,6 +73,27 @@ body {
   background: #174fb0;
 }
 
+/* 消すボタン。確認ダイアログの「削除する」に使う */
+.button-danger {
+  border-color: var(--danger);
+  background: var(--danger);
+  color: #fff;
+}
+
+.button-danger:hover {
+  background: #a31f1f;
+}
+
+/* 編集ダイアログの「削除」。確認の前なので、目立ちすぎないよう枠だけ赤くする */
+.button-danger-outline {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.button-danger-outline:hover {
+  background: #fdecec;
+}
+
 /* ---------- お知らせ欄 ---------- */
 
 .notice {
@@ -309,6 +330,10 @@ body {
   border-radius: 10px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
   color: var(--text);
+}
+
+.dialog-small {
+  width: 420px;
 }
 
 .dialog::backdrop {

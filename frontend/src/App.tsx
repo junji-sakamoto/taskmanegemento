@@ -229,6 +229,27 @@ export default function App() {
     }
   }
 
+  // 削除確認ダイアログの「削除する」。画面から先に消し、そのあとでデータベースから消す
+  function deleteCard(board: Board, cardId: string) {
+    setEditingCardId(null)
+    const card = board.cards[cardId]
+    const columnKey = findColumnKey(board, cardId)
+    if (card === undefined || columnKey === undefined) {
+      return
+    }
+    const position = board.columns[columnKey].indexOf(cardId)
+
+    setSaveFailed(false)
+    updateBoard((current) => withoutCard(current, columnKey, cardId))
+    repository.deleteCard(cardId).catch(() => {
+      // 消せなかったときは、カードを元の位置に戻す
+      updateBoard((current) =>
+        withMovedCard(withCard(current, columnKey, card), cardId, columnKey, columnKey, position),
+      )
+      setSaveFailed(true)
+    })
+  }
+
   // 並べ替えボタン。順番を決めるのは画面の仕事で、サーバーには決めた順番を送る（docs/基本設計書.md 2.4）
   function sortColumn(board: Board, columnKey: ColumnKey, sortKey: SortKey) {
     const previousIds = board.columns[columnKey]
@@ -421,6 +442,7 @@ export default function App() {
           card={editingCard}
           columnKey={editingColumnKey}
           onSave={(card, columnKey) => saveCard(board, card, columnKey)}
+          onDelete={(cardId) => deleteCard(board, cardId)}
           onClose={() => setEditingCardId(null)}
         />
       )}

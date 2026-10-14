@@ -50,6 +50,18 @@ public class CardService {
 		return CardResponse.from(card);
 	}
 
+	// カードを1枚、データベースから消す。
+	// 同じカラムに残ったカードの番号は、すき間がないように振り直す（docs/データ設計.md 3.4）
+	@Transactional
+	public void deleteCard(UUID id) {
+		Card card = findCard(id);
+		cardRepository.delete(card);
+
+		List<Card> rest = new ArrayList<>(cardRepository.findByColumnIdOrderByPositionAsc(card.getColumnId()));
+		rest.removeIf(other -> other.getId().equals(id));
+		renumber(rest);
+	}
+
 	// カードを、指定したカラムの指定した位置へ移す。同じカラムの中の並べ替えも含む。
 	// 番号の振り直しは、1つのトランザクションでまとめて行う（docs/データ設計.md 3.4）
 	@Transactional
