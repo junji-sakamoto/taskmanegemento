@@ -1,7 +1,10 @@
 package com.example.taskmanagement.board;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
@@ -74,6 +77,26 @@ public class CardService {
 			renumber(source);
 		}
 		renumber(destination);
+	}
+
+	// 指定したカラムのカードを、渡された順番に並べ直す。
+	// 優先度や期限を比べて順番を決めるのは画面の仕事で、サーバーは渡された順番をそのまま保存する（docs/基本設計書.md 2.4）
+	@Transactional
+	public void reorderColumn(String columnKey, List<UUID> cardIds) {
+		BoardColumn column = boardColumnRepository.findByKey(columnKey)
+			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "そのカラムはありません"));
+
+		Map<UUID, Card> cardsById = new HashMap<>();
+		for (Card card : cardRepository.findByColumnIdOrderByPositionAsc(column.getId())) {
+			cardsById.put(card.getId(), card);
+		}
+
+		// 渡されたカードが、そのカラムに今入っているカードとちょうど同じであることを確かめる
+		if (cardIds.size() != cardsById.size() || !new HashSet<>(cardIds).equals(cardsById.keySet())) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT, "渡されたカードが、カラムの中身と合いません");
+		}
+
+		renumber(cardIds.stream().map(cardsById::get).toList());
 	}
 
 	// 上から 0、1、2… と番号を振り直す

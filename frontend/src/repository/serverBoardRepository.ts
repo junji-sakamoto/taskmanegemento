@@ -44,4 +44,15 @@ export const serverBoardRepository: BoardRepository = {
       throw new Error(`カードを移動できませんでした（${response.status}）`)
     }
   },
+
+  async reorderColumn(columnKey: ColumnKey, cardIds: string[]): Promise<void> {
+    const response = await fetch(`/api/columns/${columnKey}/order`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cardIds }),
+    })
+    if (!response.ok) {
+      throw new Error(`カラムを並べ替えられませんでした（${response.status}）`)
+    }
+  },
 }

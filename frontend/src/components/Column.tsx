@@ -1,4 +1,6 @@
 import { useEffect, useRef } from 'react'
+import { SORTS } from '../sortCards.ts'
+import type { SortKey } from '../sortCards.ts'
 import type { Card, ColumnKey } from '../types.ts'
 import AddCardForm from './AddCardForm.tsx'
 import CardItem from './CardItem.tsx'
@@ -14,6 +16,7 @@ type Props = {
   onCloseForm: () => void
   onAddCard: (card: Card) => void
   onOpenCard: (cardId: string) => void
+  onSort: (sortKey: SortKey) => void
 }
 
 // カラム（docs/画面設計.md 5章）
@@ -26,6 +29,7 @@ export default function Column({
   onCloseForm,
   onAddCard,
   onOpenCard,
+  onSort,
 }: Props) {
   const addButtonRef = useRef<HTMLButtonElement>(null)
   // 「追加」「キャンセル」で閉じたときだけ、「カードを追加」ボタンに戻る。
@@ -55,6 +59,19 @@ export default function Column({
         <h2>
           {name}（{cards.length}）
         </h2>
+        {SORTS.map((sort) => (
+          <button
+            key={sort.key}
+            type="button"
+            className="sort-button"
+            aria-label={`${name}を${sort.label}に並べ替える`}
+            // カードが1枚以下のときは、並べ替えるものがない
+            disabled={cards.length < 2}
+            onClick={() => onSort(sort.key)}
+          >
+            {sort.label}
+          </button>
+        ))}
       </div>
       <div className="card-list">
         {cards.length === 0 && <p className="empty">カードはありません</p>}
