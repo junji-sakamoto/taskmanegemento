@@ -5,7 +5,7 @@ import Notice from './components/Notice.tsx'
 import { COLUMNS } from './constants.ts'
 import type { BoardRepository } from './repository/boardRepository.ts'
 import { serverBoardRepository } from './repository/serverBoardRepository.ts'
-import { sortCards } from './sortCards.ts'
+import { toggleSort } from './sortCards.ts'
 import type { SortKey } from './sortCards.ts'
 import type { Board, Card, ColumnKey } from './types.ts'
 
@@ -188,8 +188,8 @@ export default function App() {
   function sortColumn(board: Board, columnKey: ColumnKey, sortKey: SortKey) {
     const previousIds = board.columns[columnKey]
     const cards = previousIds.map((id) => board.cards[id])
-    const sortedIds = sortCards(cards, sortKey).map((card) => card.id)
-    // もう並んでいるときは、何もしない
+    const sortedIds = toggleSort(cards, sortKey).map((card) => card.id)
+    // 順位がみな同じで、並び順が変わらないときは、何もしない
     if (sortedIds.every((id, index) => id === previousIds[index])) {
       return
     }
