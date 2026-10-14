@@ -5,6 +5,8 @@ import Notice from './components/Notice.tsx'
 import { COLUMNS } from './constants.ts'
 import type { BoardRepository } from './repository/boardRepository.ts'
 import { serverBoardRepository } from './repository/serverBoardRepository.ts'
+import { sortCards } from './sortCards.ts'
+import type { SortKey } from './sortCards.ts'
 import type { Board, Card, ColumnKey } from './types.ts'
 
 // 保存先を変えるときは、ここの保存係を差し替える
@@ -58,6 +60,15 @@ function withMovedCard(
       [to]: destination,
     },
   }
+}
+
+// カラムのカードを、渡された順番に並べ直したボードを返す。
+// 渡された順番にないカード（あとから増えたカード）は、下に残す
+function withColumnOrder(board: Board, columnKey: ColumnKey, cardIds: string[]): Board {
+  const current = board.columns[columnKey]
+  const ordered = cardIds.filter((id) => current.includes(id))
+  const rest = current.filter((id) => !cardIds.includes(id))
+  return { ...board, columns: { ...board.columns, [columnKey]: [...ordered, ...rest] } }
 }
 
 // カードが入っているカラムを探す
@@ -173,6 +184,25 @@ export default function App() {
     }
   }
 
+  // 並べ替えボタン。順番を決めるのは画面の仕事で、サーバーには決めた順番を送る（docs/基本設計書.md 2.4）
+  function sortColumn(board: Board, columnKey: ColumnKey, sortKey: SortKey) {
+    const previousIds = board.columns[columnKey]
+    const cards = previousIds.map((id) => board.cards[id])
+    const sortedIds = sortCards(cards, sortKey).map((card) => card.id)
+    // もう並んでいるときは、何もしない
+    if (sortedIds.every((id, index) => id === previousIds[index])) {
+      return
+    }
+
+    setSaveFailed(false)
+    updateBoard((current) => withColumnOrder(current, columnKey, sortedIds))
+    repository.reorderColumn(columnKey, sortedIds).catch(() => {
+      // 保存に失敗したときは、並び順を押す前に戻す
+      updateBoard((current) => withColumnOrder(current, columnKey, previousIds))
+      setSaveFailed(true)
+    })
+  }
+
   const board = state.status === 'loaded' ? state.board : null
   const editingCard = board !== null && editingCardId !== null ? board.cards[editingCardId] : undefined
   const editingColumnKey =
@@ -206,6 +236,7 @@ export default function App() {
               onCloseForm={() => setOpenFormColumn(null)}
               onAddCard={(card) => addCard(column.key, card)}
               onOpenCard={setEditingCardId}
+              onSort={(sortKey) => sortColumn(board, column.key, sortKey)}
             />
           ))}
       </main>
