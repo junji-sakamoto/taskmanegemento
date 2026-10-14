@@ -33,6 +33,16 @@ public class Card {
 	protected Card() {
 	}
 
+	public Card(UUID id, UUID columnId, String title, String memo, LocalDate dueDate, String priority, int position) {
+		this.id = id;
+		this.columnId = columnId;
+		this.title = title;
+		this.memo = memo;
+		this.dueDate = dueDate;
+		this.priority = priority;
+		this.position = position;
+	}
+
 	public UUID getId() {
 		return id;
 	}

@@ -10,4 +10,7 @@ public interface CardRepository extends JpaRepository<Card, UUID> {
 	// カードを上から順に読む
 	List<Card> findAllByOrderByPositionAsc();
 
+	// カラムに入っているカードの枚数
+	int countByColumnId(UUID columnId);
+
 }
