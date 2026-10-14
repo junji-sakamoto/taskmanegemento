@@ -1,6 +1,7 @@
 package com.example.taskmanagement.board;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -23,7 +24,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
 
-// カードの更新（PATCH /api/cards/{id}）と移動（PUT /api/cards/{id}/position）のテスト。
+// カードの更新（PATCH /api/cards/{id}）、削除（DELETE /api/cards/{id}）、移動（PUT /api/cards/{id}/position）のテスト。
 // テストで入れたカードは、テストが終わるたびに取り消す
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -205,6 +206,41 @@ class CardUpdateTests {
 		moveCard(UUID.randomUUID(), "doing", 0).andExpect(status().isNotFound());
 	}
 
+	// ---------- 削除 ----------
+
+	@Test
+	void カードを削除するとデータベースから消える() throws Exception {
+		UUID id = addCard("todo", "消すカード");
+
+		deleteCard(id).andExpect(status().isNoContent());
+
+		entityManager.flush();
+		entityManager.clear();
+		assertThat(cardRepository.findById(id)).isEmpty();
+	}
+
+	@Test
+	void 削除したあとも同じカラムの並び順がすき間なく続く() throws Exception {
+		UUID a = addCard("doing", "A");
+		UUID b = addCard("doing", "B");
+		UUID c = addCard("doing", "C");
+		UUID d = addCard("done", "D");
+		int donePositionBefore = load(d).getPosition();
+
+		// まん中の B を消す
+		deleteCard(b).andExpect(status().isNoContent());
+
+		assertThat(cardIds("doing")).containsSubsequence(a, c).doesNotContain(b);
+		assertNumbered("doing");
+		// ほかのカラムのカードは変わらない
+		assertThat(load(d).getPosition()).isEqualTo(donePositionBefore);
+	}
+
+	@Test
+	void ないカードを削除すると404が返る() throws Exception {
+		deleteCard(UUID.randomUUID()).andExpect(status().isNotFound());
+	}
+
 	// ---------- 道具 ----------
 
 	private UUID addCard(String columnKey, String title) throws Exception {
@@ -221,6 +257,10 @@ class CardUpdateTests {
 
 	private ResultActions patchCard(UUID id, String json) throws Exception {
 		return mockMvc.perform(patch("/api/cards/{id}", id).contentType(MediaType.APPLICATION_JSON).content(json));
+	}
+
+	private ResultActions deleteCard(UUID id) throws Exception {
+		return mockMvc.perform(delete("/api/cards/{id}", id));
 	}
 
 	private ResultActions moveCard(UUID id, String columnKey, int position) throws Exception {

@@ -34,6 +34,13 @@ export const serverBoardRepository: BoardRepository = {
     }
   },
 
+  async deleteCard(cardId: string): Promise<void> {
+    const response = await fetch(`/api/cards/${cardId}`, { method: 'DELETE' })
+    if (!response.ok) {
+      throw new Error(`カードを削除できませんでした（${response.status}）`)
+    }
+  },
+
   async moveCard(cardId: string, columnKey: ColumnKey, position: number): Promise<void> {
     const response = await fetch(`/api/cards/${cardId}/position`, {
       method: 'PUT',
