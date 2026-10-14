@@ -1,3 +1,5 @@
+import { useDroppable } from '@dnd-kit/core'
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { useEffect, useRef } from 'react'
 import { SORTS } from '../sortCards.ts'
 import type { SortKey } from '../sortCards.ts'
@@ -32,6 +34,8 @@ export default function Column({
   onSort,
 }: Props) {
   const addButtonRef = useRef<HTMLButtonElement>(null)
+  // カラムそのものも、カードを落とせる場所にする。カードが1枚もないカラムへも落とせるように
+  const { setNodeRef } = useDroppable({ id: columnKey })
   // 「追加」「キャンセル」で閉じたときだけ、「カードを追加」ボタンに戻る。
   // 別のカラムのフォームを開いて閉じたときは、戻らない
   const returnFocus = useRef(false)
@@ -73,17 +77,19 @@ export default function Column({
           </button>
         ))}
       </div>
-      <div className="card-list">
-        {cards.length === 0 && <p className="empty">カードはありません</p>}
-        {cards.map((card) => (
-          <CardItem
-            key={card.id}
-            card={card}
-            columnKey={columnKey}
-            onOpen={() => onOpenCard(card.id)}
-          />
-        ))}
-      </div>
+      <SortableContext items={cards.map((card) => card.id)} strategy={verticalListSortingStrategy}>
+        <div className="card-list" ref={setNodeRef}>
+          {cards.length === 0 && <p className="empty">カードはありません</p>}
+          {cards.map((card) => (
+            <CardItem
+              key={card.id}
+              card={card}
+              columnKey={columnKey}
+              onOpen={() => onOpenCard(card.id)}
+            />
+          ))}
+        </div>
+      </SortableContext>
       {formOpen ? (
         <AddCardForm columnKey={columnKey} onAdd={handleAdd} onCancel={handleCancel} />
       ) : (
