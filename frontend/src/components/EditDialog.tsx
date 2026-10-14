@@ -1,0 +1,81 @@
+import { useLayoutEffect, useRef, useState } from 'react'
+import type { FormEvent, SyntheticEvent } from 'react'
+import { COLUMNS } from '../constants.ts'
+import type { Card, ColumnKey } from '../types.ts'
+import { useCardForm } from '../useCardForm.ts'
+import CardFields from './CardFields.tsx'
+
+type Props = {
+  card: Card
+  // カードが今入っているカラム
+  columnKey: ColumnKey
+  onSave: (card: Card, columnKey: ColumnKey) => void
+  onClose: () => void
+}
+
+// S-3 編集ダイアログ（docs/画面設計.md 7章）
+export default function EditDialog({ card, columnKey, onSave, onClose }: Props) {
+  const dialogRef = useRef<HTMLDialogElement>(null)
+  const form = useCardForm(card)
+  const [status, setStatus] = useState<ColumnKey>(columnKey)
+
+  // showModal で開くと、後ろの画面を操作できなくなり、最初の入力欄が選ばれる。
+  // close で閉じると、開く前に選んでいた場所に戻る（docs/画面設計.md 4章）
+  useLayoutEffect(() => {
+    const dialog = dialogRef.current
+    dialog?.showModal()
+    return () => dialog?.close()
+  }, [])
+
+  function handleSubmit(event: FormEvent) {
+    event.preventDefault()
+    const input = form.validate()
+    if (input === null) {
+      return
+    }
+    onSave({ id: card.id, ...input }, status)
+  }
+
+  // Esc キーは、キャンセルと同じ扱いにする
+  function handleCancel(event: SyntheticEvent) {
+    event.preventDefault()
+    onClose()
+  }
+
+  return (
+    <dialog
+      ref={dialogRef}
+      className="dialog"
+      aria-labelledby="edit-dialog-title"
+      onCancel={handleCancel}
+    >
+      <form noValidate onSubmit={handleSubmit}>
+        <h2 id="edit-dialog-title">カードを編集</h2>
+        <CardFields form={form} idPrefix="edit" />
+        <div className="field">
+          <label htmlFor="edit-status">ステータス</label>
+          <select
+            id="edit-status"
+            value={status}
+            onChange={(event) => setStatus(event.target.value as ColumnKey)}
+          >
+            {COLUMNS.map((column) => (
+              <option key={column.key} value={column.key}>
+                {column.name}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="dialog-buttons">
+          <span className="spacer"></span>
+          <button type="button" className="button" onClick={onClose}>
+            キャンセル
+          </button>
+          <button type="submit" className="button button-primary">
+            保存
+          </button>
+        </div>
+      </form>
+    </dialog>
+  )
+}

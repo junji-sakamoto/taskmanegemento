@@ -13,6 +13,7 @@ type Props = {
   onOpenForm: () => void
   onCloseForm: () => void
   onAddCard: (card: Card) => void
+  onOpenCard: (cardId: string) => void
 }
 
 // カラム（docs/画面設計.md 5章）
@@ -24,6 +25,7 @@ export default function Column({
   onOpenForm,
   onCloseForm,
   onAddCard,
+  onOpenCard,
 }: Props) {
   const addButtonRef = useRef<HTMLButtonElement>(null)
   // 「追加」「キャンセル」で閉じたときだけ、「カードを追加」ボタンに戻る。
@@ -57,7 +59,12 @@ export default function Column({
       <div className="card-list">
         {cards.length === 0 && <p className="empty">カードはありません</p>}
         {cards.map((card) => (
-          <CardItem key={card.id} card={card} columnKey={columnKey} />
+          <CardItem
+            key={card.id}
+            card={card}
+            columnKey={columnKey}
+            onOpen={() => onOpenCard(card.id)}
+          />
         ))}
       </div>
       {formOpen ? (

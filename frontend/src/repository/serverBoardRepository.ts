@@ -21,4 +21,27 @@ export const serverBoardRepository: BoardRepository = {
       throw new Error(`カードを追加できませんでした（${response.status}）`)
     }
   },
+
+  async updateCard(card: Card): Promise<void> {
+    const { id, ...fields } = card
+    const response = await fetch(`/api/cards/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(fields),
+    })
+    if (!response.ok) {
+      throw new Error(`カードを更新できませんでした（${response.status}）`)
+    }
+  },
+
+  async moveCard(cardId: string, columnKey: ColumnKey, position: number): Promise<void> {
+    const response = await fetch(`/api/cards/${cardId}/position`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ columnKey, position }),
+    })
+    if (!response.ok) {
+      throw new Error(`カードを移動できませんでした（${response.status}）`)
+    }
+  },
 }

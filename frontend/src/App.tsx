@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import Column from './components/Column.tsx'
+import EditDialog from './components/EditDialog.tsx'
 import Notice from './components/Notice.tsx'
 import { COLUMNS } from './constants.ts'
 import type { BoardRepository } from './repository/boardRepository.ts'
@@ -34,6 +35,42 @@ function withoutCard(board: Board, columnKey: ColumnKey, cardId: string): Board 
   }
 }
 
+// カードの中身を入れ替えたボードを返す。カラムと並び順は変えない
+function withUpdatedCard(board: Board, card: Card): Board {
+  return { ...board, cards: { ...board.cards, [card.id]: card } }
+}
+
+// カードを、別のカラムの指定した位置へ移したボードを返す
+function withMovedCard(
+  board: Board,
+  cardId: string,
+  from: ColumnKey,
+  to: ColumnKey,
+  position: number,
+): Board {
+  const destination = [...board.columns[to]]
+  destination.splice(position, 0, cardId)
+  return {
+    ...board,
+    columns: {
+      ...board.columns,
+      [from]: board.columns[from].filter((id) => id !== cardId),
+      [to]: destination,
+    },
+  }
+}
+
+// カードが入っているカラムを探す
+function findColumnKey(board: Board, cardId: string): ColumnKey | undefined {
+  return COLUMNS.find((column) => board.columns[column.key].includes(cardId))?.key
+}
+
+function sameFields(a: Card, b: Card): boolean {
+  return (
+    a.title === b.title && a.memo === b.memo && a.dueDate === b.dueDate && a.priority === b.priority
+  )
+}
+
 // S-1 ボード画面（docs/画面設計.md 5章）
 export default function App() {
   const [state, setState] = useState<LoadState>({ status: 'loading' })
@@ -41,6 +78,8 @@ export default function App() {
   const [reloadCount, setReloadCount] = useState(0)
   // カード追加フォームを開いているカラム。開けるフォームは同時に1つだけ
   const [openFormColumn, setOpenFormColumn] = useState<ColumnKey | null>(null)
+  // 編集ダイアログで開いているカード
+  const [editingCardId, setEditingCardId] = useState<string | null>(null)
   const [saveFailed, setSaveFailed] = useState(false)
 
   useEffect(() => {
@@ -86,6 +125,59 @@ export default function App() {
     })
   }
 
+  // 編集ダイアログの「保存」。中身の更新と、ステータスを変えたときの移動を行う
+  async function saveCard(board: Board, card: Card, toColumn: ColumnKey) {
+    setEditingCardId(null)
+    const previous = board.cards[card.id]
+    const fromColumn = findColumnKey(board, card.id)
+    if (previous === undefined || fromColumn === undefined) {
+      return
+    }
+    const changed = !sameFields(previous, card)
+    const moved = fromColumn !== toColumn
+    if (!changed && !moved) {
+      return
+    }
+
+    // ステータスを変えたカードは、移動先のカラムの一番下に入れる
+    const fromPosition = board.columns[fromColumn].indexOf(card.id)
+    const toPosition = board.columns[toColumn].length
+
+    setSaveFailed(false)
+    updateBoard((current) => {
+      const updated = withUpdatedCard(current, card)
+      return moved ? withMovedCard(updated, card.id, fromColumn, toColumn, toPosition) : updated
+    })
+
+    if (changed) {
+      try {
+        await repository.updateCard(card)
+      } catch {
+        // 保存に失敗したときは、画面のデータを変える前に戻す
+        updateBoard((current) => {
+          const restored = withUpdatedCard(current, previous)
+          return moved ? withMovedCard(restored, card.id, toColumn, fromColumn, fromPosition) : restored
+        })
+        setSaveFailed(true)
+        return
+      }
+    }
+    if (moved) {
+      try {
+        await repository.moveCard(card.id, toColumn, toPosition)
+      } catch {
+        // 中身の更新は済んでいるので、移動だけを元に戻す
+        updateBoard((current) => withMovedCard(current, card.id, toColumn, fromColumn, fromPosition))
+        setSaveFailed(true)
+      }
+    }
+  }
+
+  const board = state.status === 'loaded' ? state.board : null
+  const editingCard = board !== null && editingCardId !== null ? board.cards[editingCardId] : undefined
+  const editingColumnKey =
+    board !== null && editingCardId !== null ? findColumnKey(board, editingCardId) : undefined
+
   return (
     <>
       <header className="app-header">
@@ -102,20 +194,31 @@ export default function App() {
 
       <main className="board">
         {state.status === 'loading' && <p className="loading">読み込み中…</p>}
-        {state.status === 'loaded' &&
+        {board !== null &&
           COLUMNS.map((column) => (
             <Column
               key={column.key}
               columnKey={column.key}
               name={column.name}
-              cards={state.board.columns[column.key].map((id) => state.board.cards[id])}
+              cards={board.columns[column.key].map((id) => board.cards[id])}
               formOpen={openFormColumn === column.key}
               onOpenForm={() => setOpenFormColumn(column.key)}
               onCloseForm={() => setOpenFormColumn(null)}
               onAddCard={(card) => addCard(column.key, card)}
+              onOpenCard={setEditingCardId}
             />
           ))}
       </main>
+
+      {board !== null && editingCard !== undefined && editingColumnKey !== undefined && (
+        <EditDialog
+          key={editingCard.id}
+          card={editingCard}
+          columnKey={editingColumnKey}
+          onSave={(card, columnKey) => saveCard(board, card, columnKey)}
+          onClose={() => setEditingCardId(null)}
+        />
+      )}
     </>
   )
 }
