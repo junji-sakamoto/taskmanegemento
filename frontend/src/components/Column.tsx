@@ -77,6 +77,15 @@ export default function Column({
           </button>
         ))}
       </div>
+      {/* 新しいカードは未着手から始めるので、追加できるのは未着手カラムだけ */}
+      {columnKey === 'todo' &&
+        (formOpen ? (
+          <AddCardForm columnKey={columnKey} onAdd={handleAdd} onCancel={handleCancel} />
+        ) : (
+          <button type="button" className="add-button" ref={addButtonRef} onClick={onOpenForm}>
+            ＋ カードを追加
+          </button>
+        ))}
       <SortableContext items={cards.map((card) => card.id)} strategy={verticalListSortingStrategy}>
         <div className="card-list" ref={setNodeRef}>
           {cards.length === 0 && <p className="empty">カードはありません</p>}
@@ -90,13 +99,6 @@ export default function Column({
           ))}
         </div>
       </SortableContext>
-      {formOpen ? (
-        <AddCardForm columnKey={columnKey} onAdd={handleAdd} onCancel={handleCancel} />
-      ) : (
-        <button type="button" className="add-button" ref={addButtonRef} onClick={onOpenForm}>
-          ＋ カードを追加
-        </button>
-      )}
     </section>
   )
 }
