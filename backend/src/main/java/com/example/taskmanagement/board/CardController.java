@@ -1,9 +1,14 @@
 package com.example.taskmanagement.board;
 
+import java.util.UUID;
+
 import jakarta.validation.Valid;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -24,6 +29,17 @@ public class CardController {
 	@ResponseStatus(HttpStatus.CREATED)
 	public CardResponse addCard(@Valid @RequestBody CardCreateRequest request) {
 		return cardService.addCard(request);
+	}
+
+	@PatchMapping("/{id}")
+	public CardResponse updateCard(@PathVariable UUID id, @Valid @RequestBody CardUpdateRequest request) {
+		return cardService.updateCard(id, request);
+	}
+
+	@PutMapping("/{id}/position")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	public void moveCard(@PathVariable UUID id, @Valid @RequestBody CardMoveRequest request) {
+		cardService.moveCard(id, request);
 	}
 
 }
