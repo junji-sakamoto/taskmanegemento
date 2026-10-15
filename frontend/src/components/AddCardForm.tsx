@@ -1,12 +1,12 @@
 import { useEffect } from 'react'
 import type { FormEvent, KeyboardEvent } from 'react'
-import type { Card, ColumnKey } from '../types.ts'
+import type { CardContent, ColumnKey } from '../types.ts'
 import { useCardForm } from '../useCardForm.ts'
 import CardFields from './CardFields.tsx'
 
 type Props = {
   columnKey: ColumnKey
-  onAdd: (card: Card) => void
+  onAdd: (card: CardContent) => void
   onCancel: () => void
 }
 

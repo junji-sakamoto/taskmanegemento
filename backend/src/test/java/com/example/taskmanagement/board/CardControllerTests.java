@@ -21,7 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.example.taskmanagement.TestcontainersConfiguration;
 
 // テストで入れたカードは、テストが終わるたびに取り消す
-@SpringBootTest
+@SpringBootTest
 @Import(TestcontainersConfiguration.class)
 @AutoConfigureMockMvc
 @Transactional
@@ -66,6 +66,23 @@ class CardControllerTests {
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.columns.doing[-2]").value(first.toString()))
 			.andExpect(jsonPath("$.columns.doing[-1]").value(second.toString()));
+	}
+
+	@Test
+	void 作成日時と更新日時を返す() throws Exception {
+		UUID id = UUID.randomUUID();
+
+		postCard(cardJson(id, "todo", "日時を確かめる"))
+			.andExpect(status().isCreated())
+			.andExpect(jsonPath("$.createdAt").isNotEmpty())
+			.andExpect(jsonPath("$.updatedAt").isNotEmpty());
+
+		Card card = cardRepository.findById(id).orElseThrow();
+		assertThat(card.getUpdatedAt()).isEqualTo(card.getCreatedAt());
+		mockMvc.perform(get("/api/board"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.cards['%s'].createdAt".formatted(id)).isNotEmpty())
+			.andExpect(jsonPath("$.cards['%s'].updatedAt".formatted(id)).isNotEmpty());
 	}
 
 	@Test

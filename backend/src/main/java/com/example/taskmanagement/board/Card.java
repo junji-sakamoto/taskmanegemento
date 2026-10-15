@@ -38,7 +38,10 @@ public class Card implements Persistable<UUID> {
 
 	private int position;
 
-	// 作成日時（created_at）は、データベースが自動で入れる。更新日時は、サーバーが入れる
+	// 作成日時と更新日時は、サーバーが入れる。作成日時は、あとから変えない
+	@Column(name = "created_at", updatable = false)
+	private Instant createdAt;
+
 	@Column(name = "updated_at")
 	private Instant updatedAt;
 
@@ -57,7 +60,8 @@ public class Card implements Persistable<UUID> {
 		this.dueDate = dueDate;
 		this.priority = priority;
 		this.position = position;
-		this.updatedAt = Instant.now();
+		this.createdAt = Instant.now();
+		this.updatedAt = this.createdAt;
 	}
 
 	// カードの4項目を書き換える
@@ -119,6 +123,10 @@ public class Card implements Persistable<UUID> {
 
 	public int getPosition() {
 		return position;
+	}
+
+	public Instant getCreatedAt() {
+		return createdAt;
 	}
 
 	public Instant getUpdatedAt() {

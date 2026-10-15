@@ -12,7 +12,7 @@ import {
 import type { BoardRepository } from './repository/boardRepository.ts'
 import { toggleSort } from './sortCards.ts'
 import type { SortKey } from './sortCards.ts'
-import type { Board, Card, ColumnKey } from './types.ts'
+import type { Board, Card, CardContent, ColumnKey } from './types.ts'
 
 type LoadState =
   | { status: 'loading' }
@@ -79,26 +79,31 @@ export function useBoard(repository: BoardRepository) {
 
   const board = state.status === 'loaded' ? state.board : null
 
-  // 未着手カラムの一番下に、カードを加える
-  function addCard(columnKey: ColumnKey, card: Card) {
+  // 未着手カラムの一番下に、カードを加える。
+  // 作成日時と更新日時は、サーバーの返事を待たずに今の日時で表示する。読み込み直すと、サーバーの値になる
+  function addCard(columnKey: ColumnKey, content: CardContent) {
+    const now = new Date().toISOString()
+    const card: Card = { ...content, createdAt: now, updatedAt: now }
     updateBoard((current) => withCard(current, columnKey, card))
-    save(repository.addCard(columnKey, card), (current) => withoutCard(current, columnKey, card.id))
+    save(repository.addCard(columnKey, content), (current) => withoutCard(current, columnKey, card.id))
   }
 
   // 編集ダイアログの「保存」。中身の更新と、ステータスを変えたときの移動を、1回の保存で行う
-  function saveCard(card: Card, toColumn: ColumnKey) {
+  function saveCard(content: CardContent, toColumn: ColumnKey) {
     if (board === null) {
       return
     }
-    const previous = board.cards[card.id]
-    const fromColumn = findColumnKey(board, card.id)
+    const previous = board.cards[content.id]
+    const fromColumn = findColumnKey(board, content.id)
     if (previous === undefined || fromColumn === undefined) {
       return
     }
     const moved = fromColumn !== toColumn
-    if (!moved && sameFields(previous, card)) {
+    if (!moved && sameFields(previous, content)) {
       return
     }
+    // サーバーも、書き換えたときに更新日時を新しくする
+    const card: Card = { ...content, createdAt: previous.createdAt, updatedAt: new Date().toISOString() }
 
     // ステータスを変えたカードは、移動先のカラムの一番下に入れる
     const fromIndex = board.columns[fromColumn].indexOf(card.id)
@@ -108,7 +113,7 @@ export function useBoard(repository: BoardRepository) {
       const updated = withUpdatedCard(current, card)
       return moved ? withMovedCard(updated, card.id, fromColumn, toColumn, toIndex) : updated
     })
-    save(repository.updateCard(card, toColumn), (current) => {
+    save(repository.updateCard(content, toColumn), (current) => {
       const restored = withUpdatedCard(current, previous)
       return moved ? withMovedCard(restored, card.id, toColumn, fromColumn, fromIndex) : restored
     })
@@ -160,11 +165,15 @@ export function useBoard(repository: BoardRepository) {
   // ドラッグで離したカードを、to へ置いて保存する。失敗したら from へ戻す
   function moveCard(cardId: string, from: CardPlace, to: CardPlace) {
     showCardAt(cardId, to)
-    if (from.column === to.column && from.index === to.index) {
+    const previous = board?.cards[cardId]
+    if ((from.column === to.column && from.index === to.index) || previous === undefined) {
       return
     }
+    // サーバーも、動かしたカードの更新日時を新しくする
+    const moved: Card = { ...previous, updatedAt: new Date().toISOString() }
+    updateBoard((current) => withUpdatedCard(current, moved))
     save(repository.moveCard(cardId, to.column, to.index), (current) =>
-      withCardAt(current, cardId, from.column, from.index),
+      withUpdatedCard(withCardAt(current, cardId, from.column, from.index), previous),
     )
   }
 
