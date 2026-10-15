@@ -61,6 +61,9 @@ export default function CardItem({ card, columnKey, onOpen }: Props) {
   }
 
   return (
+    // role="button" と tabIndex は、dnd-kit の attributes が付ける。
+    // 点検の道具からは attributes の中身が見えないので、このルールはここだけ外す
+    // oxlint-disable-next-line jsx-a11y/no-static-element-interactions
     <div
       ref={setNodeRef}
       className={isDragging ? 'card dragging' : 'card'}
