@@ -6,8 +6,8 @@ export type BoardRepository = {
   loadBoard(): Promise<Board>
   // 指定したカラムの一番下に、カードを1枚加える
   addCard(columnKey: ColumnKey, card: Card): Promise<void>
-  // カードの4項目を書き換える
-  updateCard(card: Card): Promise<void>
+  // カードの4項目を書き換える。columnKey が今のカラムと違うときは、そのカラムの一番下へ移す
+  updateCard(card: Card, columnKey: ColumnKey): Promise<void>
   // カードを1枚消す
   deleteCard(cardId: string): Promise<void>
   // カードを、指定したカラムの指定した位置（上から何番目か。0から）へ移す

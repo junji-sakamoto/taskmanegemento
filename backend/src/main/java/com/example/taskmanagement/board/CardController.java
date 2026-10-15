@@ -6,7 +6,6 @@ import jakarta.validation.Valid;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -32,7 +31,7 @@ public class CardController {
 		return cardService.addCard(request);
 	}
 
-	@PatchMapping("/{id}")
+	@PutMapping("/{id}")
 	public CardResponse updateCard(@PathVariable UUID id, @Valid @RequestBody CardUpdateRequest request) {
 		return cardService.updateCard(id, request);
 	}

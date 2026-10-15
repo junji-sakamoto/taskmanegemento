@@ -38,6 +38,9 @@ export default function AddCardForm({ columnKey, onAdd, onCancel }: Props) {
   }
 
   return (
+    // フォームの中のどの入力欄にいても Esc で閉じられるように、フォームでキーを受ける。
+    // 操作そのものは中の入力欄とボタンで行うので、このルールはここだけ外す
+    // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
     <form className="add-form" noValidate onSubmit={handleSubmit} onKeyDown={handleKeyDown}>
       <CardFields form={form} idPrefix={`add-${columnKey}`} />
       <div className="form-buttons">

@@ -86,6 +86,10 @@ gh issue create --title "タスクの一覧画面を作る" --label enhancement 
 
 くわしい手順は、スキル `start-servers`（`.claude/skills/start-servers/SKILL.md`）に書いてある。サーバーを起動するときは、必ずこのスキルを使う。
 
+## 品質をチェックするときのルール
+
+品質のチェック（コードレビュー、標準から外れていないか、設計書と実装が合っているか）を頼まれたときは、必ずスキル `quality-check`（`.claude/skills/quality-check/SKILL.md`）を使う。
+
 ## GitHub 側の設定（参考）
 
 main ブランチには、GitHub のルールセット「main を保護する」をかけてある。
