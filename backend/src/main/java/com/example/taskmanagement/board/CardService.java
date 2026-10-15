@@ -42,11 +42,25 @@ public class CardService {
 		return CardResponse.from(cardRepository.save(card));
 	}
 
-	// カードの4項目を書き換える。カラムと並び順は変えない
+	// カードの4項目を書き換える。カラムが今と違うときは、そのカラムの一番下へ移す。
+	// 書き換えと移動は、1つのトランザクションでまとめて行う（docs/基本設計書.md 2.3）
 	@Transactional
 	public CardResponse updateCard(UUID id, CardUpdateRequest request) {
 		Card card = findCard(id);
 		card.update(request.title(), request.memo(), request.dueDate(), request.priority());
+
+		BoardColumn destinationColumn = findColumn(request.columnKey());
+		UUID sourceColumnId = card.getColumnId();
+		if (!sourceColumnId.equals(destinationColumn.getId())) {
+			// 移動先の今の枚数が、そのまま一番下の番号になる
+			card.renumber(cardRepository.countByColumnId(destinationColumn.getId()));
+			card.moveTo(destinationColumn.getId());
+
+			// 移動元に残ったカードの番号を、すき間がないように振り直す（docs/データ設計.md 3.4）
+			List<Card> rest = new ArrayList<>(cardRepository.findByColumnIdOrderByPositionAsc(sourceColumnId));
+			rest.removeIf(other -> other.getId().equals(id));
+			renumber(rest);
+		}
 		return CardResponse.from(card);
 	}
 

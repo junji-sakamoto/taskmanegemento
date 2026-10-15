@@ -22,12 +22,12 @@ export const serverBoardRepository: BoardRepository = {
     }
   },
 
-  async updateCard(card: Card): Promise<void> {
+  async updateCard(card: Card, columnKey: ColumnKey): Promise<void> {
     const { id, ...fields } = card
     const response = await fetch(`/api/cards/${id}`, {
-      method: 'PATCH',
+      method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(fields),
+      body: JSON.stringify({ ...fields, columnKey }),
     })
     if (!response.ok) {
       throw new Error(`カードを更新できませんでした（${response.status}）`)

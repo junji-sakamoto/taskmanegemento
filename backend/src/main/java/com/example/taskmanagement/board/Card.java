@@ -7,12 +7,19 @@ import java.util.UUID;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.PostLoad;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 
-// cards テーブルの1行
+import org.springframework.data.domain.Persistable;
+
+// cards テーブルの1行。
+// id は画面の側で作るので、新しいカードかどうかを id の有無では見分けられない。
+// そこで Persistable で自分から知らせ、保存のときに余分な SELECT が走らないようにする
 @Entity
 @Table(name = "cards")
-public class Card {
+public class Card implements Persistable<UUID> {
 
 	@Id
 	private UUID id;
@@ -34,6 +41,10 @@ public class Card {
 	// 作成日時（created_at）は、データベースが自動で入れる。更新日時は、サーバーが入れる
 	@Column(name = "updated_at")
 	private Instant updatedAt;
+
+	// まだデータベースに入れていないカードか。テーブルの列ではない
+	@Transient
+	private boolean isNew = true;
 
 	protected Card() {
 	}
@@ -69,6 +80,19 @@ public class Card {
 		this.position = position;
 	}
 
+	// データベースから読んだときと、データベースに入れると決めたときから、新しいカードではない
+	@PostLoad
+	@PrePersist
+	void markNotNew() {
+		this.isNew = false;
+	}
+
+	@Override
+	public boolean isNew() {
+		return isNew;
+	}
+
+	@Override
 	public UUID getId() {
 		return id;
 	}

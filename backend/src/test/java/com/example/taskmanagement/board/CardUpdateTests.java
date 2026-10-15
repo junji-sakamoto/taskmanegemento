@@ -2,9 +2,9 @@ package com.example.taskmanagement.board;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -18,15 +18,19 @@ import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
 
-// カードの更新（PATCH /api/cards/{id}）、削除（DELETE /api/cards/{id}）、移動（PUT /api/cards/{id}/position）のテスト。
+import com.example.taskmanagement.TestcontainersConfiguration;
+
+// カードの更新（PUT /api/cards/{id}）、削除（DELETE /api/cards/{id}）、移動（PUT /api/cards/{id}/position）のテスト。
 // テストで入れたカードは、テストが終わるたびに取り消す
 @SpringBootTest
+@Import(TestcontainersConfiguration.class)
 @AutoConfigureMockMvc
 @Transactional
 class CardUpdateTests {
@@ -50,8 +54,9 @@ class CardUpdateTests {
 		UUID id = addCard("todo", "もとのタイトル");
 		int positionBefore = load(id).getPosition();
 
-		patchCard(id, """
-				{"title": "  新しいタイトル  ", "memo": "新しいメモ", "dueDate": "2026-11-01", "priority": "low"}
+		putCard(id, """
+				{"title": "  新しいタイトル  ", "memo": "新しいメモ", "dueDate": "2026-11-01", "priority": "low",
+				 "columnKey": "todo"}
 				""")
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.id").value(id.toString()))
@@ -76,8 +81,8 @@ class CardUpdateTests {
 				{"id": "%s", "columnKey": "todo", "title": "タイトル", "dueDate": "2026-10-15", "priority": "high"}
 				""".formatted(id)).andExpect(status().isCreated());
 
-		patchCard(id, """
-				{"title": "タイトル", "memo": "", "dueDate": null, "priority": null}
+		putCard(id, """
+				{"title": "タイトル", "memo": "", "dueDate": null, "priority": null, "columnKey": "todo"}
 				""").andExpect(status().isOk());
 
 		Card card = load(id);
@@ -91,8 +96,8 @@ class CardUpdateTests {
 		Instant before = load(id).getUpdatedAt();
 		assertThat(before).isNotNull();
 
-		patchCard(id, """
-				{"title": "タイトル", "priority": "medium"}
+		putCard(id, """
+				{"title": "タイトル", "priority": "medium", "columnKey": "todo"}
 				""").andExpect(status().isOk());
 
 		assertThat(load(id).getUpdatedAt()).isAfter(before);
@@ -103,20 +108,20 @@ class CardUpdateTests {
 		UUID id = addCard("todo", "もとのタイトル");
 
 		// タイトルが空白だけ
-		patchCard(id, """
-				{"title": "　 ", "memo": ""}
+		putCard(id, """
+				{"title": "　 ", "memo": "", "columnKey": "todo"}
 				""").andExpect(status().isBadRequest());
 		// タイトルが101文字
-		patchCard(id, """
-				{"title": "%s"}
+		putCard(id, """
+				{"title": "%s", "columnKey": "todo"}
 				""".formatted("あ".repeat(101))).andExpect(status().isBadRequest());
 		// 優先度が決まった値でない
-		patchCard(id, """
-				{"title": "タイトル", "priority": "urgent"}
+		putCard(id, """
+				{"title": "タイトル", "priority": "urgent", "columnKey": "todo"}
 				""").andExpect(status().isBadRequest());
 		// 正しくない日付
-		patchCard(id, """
-				{"title": "タイトル", "dueDate": "2026-02-30"}
+		putCard(id, """
+				{"title": "タイトル", "dueDate": "2026-02-30", "columnKey": "todo"}
 				""").andExpect(status().isBadRequest());
 
 		assertThat(load(id).getTitle()).isEqualTo("もとのタイトル");
@@ -124,9 +129,55 @@ class CardUpdateTests {
 
 	@Test
 	void ないカードを更新すると404が返る() throws Exception {
-		patchCard(UUID.randomUUID(), """
-				{"title": "タイトル"}
+		putCard(UUID.randomUUID(), """
+				{"title": "タイトル", "columnKey": "todo"}
 				""").andExpect(status().isNotFound());
+	}
+
+	@Test
+	void カラムを送らないと400が返る() throws Exception {
+		UUID id = addCard("todo", "タイトル");
+
+		putCard(id, """
+				{"title": "タイトル"}
+				""").andExpect(status().isBadRequest());
+		putCard(id, """
+				{"title": "タイトル", "columnKey": "later"}
+				""").andExpect(status().isBadRequest());
+	}
+
+	@Test
+	void カラムを変えると中身を書き換えて移動先の一番下へ移る() throws Exception {
+		UUID a = addCard("todo", "A");
+		UUID b = addCard("todo", "B");
+		UUID c = addCard("todo", "C");
+		UUID d = addCard("done", "D");
+
+		putCard(b, """
+				{"title": "B を完了にする", "priority": "high", "columnKey": "done"}
+				""").andExpect(status().isOk());
+
+		Card card = load(b);
+		assertThat(card.getTitle()).isEqualTo("B を完了にする");
+		assertThat(card.getPriority()).isEqualTo("high");
+		assertThat(card.getColumnId()).isEqualTo(columnId("done"));
+		List<UUID> done = cardIds("done");
+		assertThat(done.get(done.size() - 1)).isEqualTo(b);
+		assertThat(done).containsSubsequence(d, b);
+		assertThat(cardIds("todo")).containsSubsequence(a, c).doesNotContain(b);
+		assertNumbered("todo");
+		assertNumbered("done");
+	}
+
+	@Test
+	void エラーの返事はProblemDetailの形になる() throws Exception {
+		putCard(UUID.randomUUID(), """
+				{"title": "タイトル", "columnKey": "todo"}
+				""")
+			.andExpect(status().isNotFound())
+			.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+			.andExpect(jsonPath("$.status").value(404))
+			.andExpect(jsonPath("$.title").exists());
 	}
 
 	// ---------- 移動 ----------
@@ -255,8 +306,8 @@ class CardUpdateTests {
 		return mockMvc.perform(post("/api/cards").contentType(MediaType.APPLICATION_JSON).content(json));
 	}
 
-	private ResultActions patchCard(UUID id, String json) throws Exception {
-		return mockMvc.perform(patch("/api/cards/{id}", id).contentType(MediaType.APPLICATION_JSON).content(json));
+	private ResultActions putCard(UUID id, String json) throws Exception {
+		return mockMvc.perform(put("/api/cards/{id}", id).contentType(MediaType.APPLICATION_JSON).content(json));
 	}
 
 	private ResultActions deleteCard(UUID id) throws Exception {

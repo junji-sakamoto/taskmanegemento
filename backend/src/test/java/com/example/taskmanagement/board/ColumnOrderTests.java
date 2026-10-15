@@ -17,15 +17,19 @@ import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.taskmanagement.TestcontainersConfiguration;
+
 // カラムの並べ替え（PUT /api/columns/{key}/order）のテスト。
 // テストで入れたカードは、テストが終わるたびに取り消す
-@SpringBootTest
+@SpringBootTest
+@Import(TestcontainersConfiguration.class)
 @AutoConfigureMockMvc
 @Transactional
 class ColumnOrderTests {
