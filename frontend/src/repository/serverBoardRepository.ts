@@ -1,4 +1,4 @@
-import type { Board, Card, ColumnKey } from '../types.ts'
+import type { Board, CardContent, ColumnKey } from '../types.ts'
 import type { BoardRepository } from './boardRepository.ts'
 
 // サーバーに頼む保存係（docs/基本設計書.md 3章）
@@ -11,7 +11,7 @@ export const serverBoardRepository: BoardRepository = {
     return response.json()
   },
 
-  async addCard(columnKey: ColumnKey, card: Card): Promise<void> {
+  async addCard(columnKey: ColumnKey, card: CardContent): Promise<void> {
     const response = await fetch('/api/cards', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -22,7 +22,7 @@ export const serverBoardRepository: BoardRepository = {
     }
   },
 
-  async updateCard(card: Card, columnKey: ColumnKey): Promise<void> {
+  async updateCard(card: CardContent, columnKey: ColumnKey): Promise<void> {
     const { id, ...fields } = card
     const response = await fetch(`/api/cards/${id}`, {
       method: 'PUT',

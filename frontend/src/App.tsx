@@ -23,7 +23,7 @@ import Notice from './components/Notice.tsx'
 import { COLUMNS } from './constants.ts'
 import type { BoardRepository } from './repository/boardRepository.ts'
 import { serverBoardRepository } from './repository/serverBoardRepository.ts'
-import type { Card, ColumnKey } from './types.ts'
+import type { CardContent, ColumnKey } from './types.ts'
 import { useBoard } from './useBoard.ts'
 import type { CardPlace } from './useBoard.ts'
 
@@ -74,12 +74,12 @@ export default function App() {
     }),
   )
 
-  function handleAddCard(columnKey: ColumnKey, card: Card) {
+  function handleAddCard(columnKey: ColumnKey, card: CardContent) {
     setOpenFormColumn(null)
     addCard(columnKey, card)
   }
 
-  function handleSaveCard(card: Card, toColumn: ColumnKey) {
+  function handleSaveCard(card: CardContent, toColumn: ColumnKey) {
     setEditingCardId(null)
     saveCard(card, toColumn)
   }

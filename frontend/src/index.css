@@ -251,6 +251,25 @@ body {
   gap: 8px;
 }
 
+/* 編集ダイアログの作成日と更新日。入力欄ではないので、小さく薄い文字で横に並べる */
+.card-dates {
+  display: flex;
+  gap: 24px;
+  margin: 4px 0 12px;
+  font-size: 13px;
+  color: var(--text-sub);
+}
+
+.card-dates div {
+  display: flex;
+  gap: 8px;
+}
+
+.card-dates dt,
+.card-dates dd {
+  margin: 0;
+}
+
 /* ---------- カード ---------- */
 
 .card {

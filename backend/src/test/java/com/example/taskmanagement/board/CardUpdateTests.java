@@ -101,6 +101,8 @@ class CardUpdateTests {
 				""").andExpect(status().isOk());
 
 		assertThat(load(id).getUpdatedAt()).isAfter(before);
+		// 作成日時は変わらない
+		assertThat(load(id).getCreatedAt()).isEqualTo(before);
 	}
 
 	@Test

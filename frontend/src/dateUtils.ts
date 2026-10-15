@@ -6,6 +6,12 @@ export function todayString(): string {
   return `${d.getFullYear()}-${month}-${day}`
 }
 
+// 日時（例：2026-10-15T03:15:16.123Z）を、このパソコンの時刻での日付「2026/10/15」の形にする
+export function formatDate(dateTime: string): string {
+  const d = new Date(dateTime)
+  return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`
+}
+
 // 今年なら「10/15」、今年以外なら「2027/1/5」の形にする
 export function formatDueDate(dueDate: string): string {
   const [year, month, day] = dueDate.split('-').map(Number)

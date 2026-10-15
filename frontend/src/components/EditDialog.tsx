@@ -1,7 +1,8 @@
 import { useLayoutEffect, useRef, useState } from 'react'
 import type { FormEvent, SyntheticEvent } from 'react'
 import { COLUMNS } from '../constants.ts'
-import type { Card, ColumnKey } from '../types.ts'
+import { formatDate } from '../dateUtils.ts'
+import type { Card, CardContent, ColumnKey } from '../types.ts'
 import { useCardForm } from '../useCardForm.ts'
 import CardFields from './CardFields.tsx'
 import DeleteDialog from './DeleteDialog.tsx'
@@ -10,7 +11,7 @@ type Props = {
   card: Card
   // カードが今入っているカラム
   columnKey: ColumnKey
-  onSave: (card: Card, columnKey: ColumnKey) => void
+  onSave: (card: CardContent, columnKey: ColumnKey) => void
   onDelete: (cardId: string) => void
   onClose: () => void
 }
@@ -71,6 +72,17 @@ export default function EditDialog({ card, columnKey, onSave, onDelete, onClose 
               ))}
             </select>
           </div>
+          {/* 作成日と更新日。見せるだけで、書き換えはできない */}
+          <dl className="card-dates">
+            <div>
+              <dt>作成日</dt>
+              <dd>{formatDate(card.createdAt)}</dd>
+            </div>
+            <div>
+              <dt>更新日</dt>
+              <dd>{formatDate(card.updatedAt)}</dd>
+            </div>
+          </dl>
           <div className="dialog-buttons">
             {/* 誤って押さないよう、左端に離して置く */}
             <button

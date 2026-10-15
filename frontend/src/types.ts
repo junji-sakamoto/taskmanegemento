@@ -4,13 +4,21 @@ export type ColumnKey = 'todo' | 'doing' | 'done'
 
 export type Priority = 'high' | 'medium' | 'low'
 
-export type Card = {
+// カードの中身。画面で入力して、サーバーへ送る項目
+export type CardContent = {
   id: string
   title: string
   memo: string
   // 期限（例：2026-10-15）と優先度は、未設定なら null
   dueDate: string | null
   priority: Priority | null
+}
+
+export type Card = CardContent & {
+  // 作成日時と更新日時（例：2026-10-15T03:15:16.123Z）。サーバーが記録する。
+  // 見せるためだけに持ち、サーバーへは送らない。バックアップのファイルにも入れない
+  createdAt: string
+  updatedAt: string
 }
 
 export type Board = {

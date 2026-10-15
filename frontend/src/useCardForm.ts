@@ -1,8 +1,8 @@
 import { useRef, useState } from 'react'
-import type { Card, Priority } from './types.ts'
+import type { CardContent, Priority } from './types.ts'
 
 // フォームで入力する、カードの4項目
-export type CardInput = Omit<Card, 'id'>
+export type CardInput = Omit<CardContent, 'id'>
 
 type Errors = {
   title?: string

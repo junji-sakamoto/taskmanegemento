@@ -1,5 +1,5 @@
 import { COLUMNS } from './constants.ts'
-import type { Board, Card, ColumnKey } from './types.ts'
+import type { Board, Card, CardContent, ColumnKey } from './types.ts'
 
 // ボードのデータを変える関数。どれも、もとのボードは変えずに、新しいボードを返す
 
@@ -73,7 +73,7 @@ export function columnName(columnKey: ColumnKey): string {
 }
 
 // カードの4項目が同じか
-export function sameFields(a: Card, b: Card): boolean {
+export function sameFields(a: CardContent, b: CardContent): boolean {
   return (
     a.title === b.title && a.memo === b.memo && a.dueDate === b.dueDate && a.priority === b.priority
   )

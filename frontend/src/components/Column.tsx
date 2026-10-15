@@ -3,7 +3,7 @@ import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { useEffect, useRef } from 'react'
 import { SORTS } from '../sortCards.ts'
 import type { SortKey } from '../sortCards.ts'
-import type { Card, ColumnKey } from '../types.ts'
+import type { Card, CardContent, ColumnKey } from '../types.ts'
 import AddCardForm from './AddCardForm.tsx'
 import CardItem from './CardItem.tsx'
 
@@ -16,7 +16,7 @@ type Props = {
   formOpen: boolean
   onOpenForm: () => void
   onCloseForm: () => void
-  onAddCard: (card: Card) => void
+  onAddCard: (card: CardContent) => void
   onOpenCard: (cardId: string) => void
   onSort: (sortKey: SortKey) => void
 }
@@ -47,7 +47,7 @@ export default function Column({
     }
   }, [formOpen])
 
-  function handleAdd(card: Card) {
+  function handleAdd(card: CardContent) {
     returnFocus.current = true
     onAddCard(card)
   }
