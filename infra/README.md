@@ -109,6 +109,8 @@ terraform -chdir=infra apply -refresh-only
 
 EC2 は、止めて動かすと公開 IP アドレスが変わる。`deploy.ps1` や `terraform output` は Terraform の記録から IP アドレスを読むので、動かしたあとは `terraform apply -refresh-only` で記録を新しくする。これは記録を新しくするだけで、AWS の上のものは何も変えない。
 
+EC2 を止めているあいだに `terraform plan` すると、output（`public_ip`、`app_url`、`ssh_command`）だけが空に変わって見える。止めた EC2 は公開 IP アドレスを持たないためで、AWS の上のものは変わらない。
+
 RDS は止めても 7 日たつと自動で動き出すので、長く使わないときは片付ける。
 
 ## 自宅の IP アドレスが変わったとき

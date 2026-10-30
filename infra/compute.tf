@@ -42,9 +42,14 @@ resource "aws_instance" "app" {
   # EC2 の中のデータも消えるので、データを置くようになったら見直す
   user_data_replace_on_change = true
 
-  # 新しいイメージが出るたびに、作り直されないようにする
   lifecycle {
-    ignore_changes = [ami]
+    ignore_changes = [
+      # 新しいイメージが出るたびに、作り直されないようにする
+      ami,
+      # 止めている EC2 は公開 IP アドレスを持たず、AWS からは false に見える。
+      # この項目は変わると作り直しになるので、止めているときに作り直されないようにする（#69）
+      associate_public_ip_address,
+    ]
   }
 
   tags = {
