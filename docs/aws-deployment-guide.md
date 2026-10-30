@@ -229,6 +229,7 @@ ssh-keygen -t ed25519 -f "$HOME\.ssh\taskmanagement-ec2" -C "taskmanagement-ec2"
 | 7 | 失敗したら前の版に戻す | 動かない版を載せると自動で戻る。`-Rollback` で手で戻せる | #53 |
 | 8 | `deploy/smoke-test.ps1` | デプロイのあと、カードの操作まで自動で確かめる | #55 |
 | 9 | このガイドの書き直し | | #57 |
+| 10 | RDS のパスワードが変わったら、Spring Boot を自動で起動し直す | 実際にパスワードを変えると、約 3 分で新しいパスワードで起動し直し、アプリが使える | #63 |
 
 ## 5. 一から作るとき
 
@@ -354,7 +355,11 @@ terraform -chdir=infra apply
 
 ### 6-6 RDS のパスワードが変わったとき
 
-RDS のパスワードは、RDS が 7 日ごとに自動で変えます。Spring Boot は起動したときにパスワードを読むので、変わったあとに新しくつなぐと失敗し、画面でカードを読み込めなくなります。そのときは、Spring Boot を起動し直します。
+RDS のパスワードは、RDS が 7 日ごとに自動で変えます。Spring Boot は起動したときに読んだパスワードを使い続けるので、そのままでは、変わったあとにデータベースにつながらなくなります。
+
+そこで EC2 では、5 分ごとにパスワードの版を確かめ、変わっていたら Spring Boot を自動で起動し直します（`deploy/ec2/secret-watch.sh`。くわしくは [deploy/ec2/README.md](../deploy/ec2/README.md)）。変わってから最大 5 分ほどは、つながらないことがあります。
+
+それでも画面でカードを読み込めないときは、手で起動し直します。
 
 ```powershell
 ssh -i ~/.ssh/taskmanagement-ec2 "ec2-user@$(terraform -chdir=infra output -raw public_ip)" "sudo systemctl restart taskmanagement"

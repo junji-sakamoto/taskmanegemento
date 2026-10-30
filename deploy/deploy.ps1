@@ -115,7 +115,7 @@ try {
 
         Write-Step "EC2 に送る"
         ssh @sshOptions "ec2-user@$ip" "rm -rf $staging && mkdir -p $staging"
-        scp @sshOptions deploy/ec2/install.sh deploy/ec2/start.sh deploy/ec2/taskmanagement.service deploy/ec2/nginx.conf "ec2-user@${ip}:$staging/"
+        scp @sshOptions deploy/ec2/install.sh deploy/ec2/start.sh deploy/ec2/taskmanagement.service deploy/ec2/nginx.conf deploy/ec2/secret-watch.sh deploy/ec2/taskmanagement-secret-watch.service deploy/ec2/taskmanagement-secret-watch.timer "ec2-user@${ip}:$staging/"
         if ($Frontend) {
             scp @sshOptions -r frontend/dist "ec2-user@${ip}:$staging/"
         }

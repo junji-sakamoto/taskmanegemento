@@ -2,3 +2,4 @@
 # CRLF になると、シェルスクリプトや systemd の設定が動かなくなる
 *.sh text eol=lf
 *.service text eol=lf
+*.timer text eol=lf
