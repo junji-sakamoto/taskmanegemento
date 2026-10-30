@@ -5,7 +5,8 @@ Trello 風のタスク管理アプリ。タスクを「カード」として登�
 スクールの課題として、Web アプリ開発を一通り経験するために作っている。要件定義、設計、実装、運用までを、自分の手で行う（[要件定義書](docs/要件定義書.md) 1章）。
 
 - 利用者は自分1人。ログインはない
-- 自分のパソコンの中だけで動かす。インターネットには公開しない
+- 自分のパソコンで動かして開発する。AWS の上でも動かせる（[AWS で動かす](#aws-で動かす)）
+- 誰でも使える形では、インターネットに公開しない。AWS で動かすときも、自分のパソコンの IP アドレスからだけ開ける
 
 ## 目次
 
@@ -18,6 +19,7 @@ Trello 風のタスク管理アプリ。タスクを「カード」として登�
 - [コードの点検とテスト](#コードの点検とテスト)
 - [テスト用のデータを入れる](#テスト用のデータを入れる)
 - [うまく動かないとき](#うまく動かないとき)
+- [AWS で動かす](#aws-で動かす)
 - [フォルダの構成](#フォルダの構成)
 - [文書](#文書)
 - [開発の進め方](#開発の進め方)
@@ -81,6 +83,8 @@ flowchart LR
 
 くわしい構成とデータの流れは、[基本設計書](docs/基本設計書.md)に書いてある。
 
+AWS で動かすときは、同じ画面とサーバーを1台のサーバー（EC2）に置き、データベースは RDS を使う。インフラ構成図は [技術スタック](docs/技術スタック.md) 5章にある。
+
 ## 使っている技術
 
 | 分類 | 使っているもの |
@@ -91,6 +95,7 @@ flowchart LR
 | テーブルの変更の管理 | Flyway |
 | コードの点検 | Oxlint（画面）、Checkstyle（サーバー）、GitHub Actions（プルリクエストごとに自動で点検） |
 | 自動テスト | JUnit、Testcontainers（サーバーだけ） |
+| AWS で動かす | EC2、RDS（PostgreSQL 18）、nginx、Terraform、AWS CLI |
 
 選んだ理由と、選ばなかったものは、[技術スタック](docs/技術スタック.md)に書いてある。
 
@@ -221,6 +226,47 @@ docker exec taskmanagement-db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" 
 | サーバーが起動の途中で止まる | データベースが起動しているか（`docker ps` に `taskmanagement-db` が出るか）。`.env` を作ったか |
 | `Port 5173 is already in use` や `Port 8080 was already in use` と出る | 前に起動した画面やサーバーが、動いたままになっている。それを止めてから、起動し直す。別の番地では起動しない |
 
+## AWS で動かす
+
+同じアプリを、AWS（東京リージョン）の上でも動かせる。AWS の部品は Terraform のコード（`infra/`）で作り、アプリは PowerShell のスクリプト（`deploy/`）で載せる。マネジメントコンソール（AWS の Web 画面）は、アカウントの作成、ルートユーザーの保護、予算の設定にだけ使う。
+
+| 知りたいこと | 書いてある場所 |
+| --- | --- |
+| インフラ構成図、部品ごとの設定、誰が何につながれるか、費用の目安 | [技術スタック](docs/技術スタック.md) 5章 |
+| 構成の考え方（製品名を出さない図） | [基本設計書](docs/基本設計書.md) 1.4 |
+| AWS の部品を作る・片付ける | [infra/README.md](infra/README.md) |
+| アプリを載せる・前の版に戻す・動作を確かめる・データを残す | [deploy/ec2/README.md](deploy/ec2/README.md) |
+
+### 準備（最初の1回だけ）
+
+1. **AWS アカウント**：ルートユーザー（アカウントを作ったときのメールアドレスとパスワード）に MFA を登録し、ルートユーザーのアクセスキーは作らない。月額の予算を決め、超えそうなときにメールが届くようにする（AWS Budgets）
+2. **道具**：AWS CLI と Terraform を入れる（`winget install --id Amazon.AWSCLI -e --source winget`、`Hashicorp.Terraform` も同じ）。入れたら Cursor を開き直す。版は [技術スタック](docs/技術スタック.md) 4.4
+3. **ログイン**：今は IAM ユーザーのアクセスキー（MFA あり）を `aws configure` で登録して使っている。`aws sts get-caller-identity` で確かめる。期限のない鍵なので、いずれ IAM Identity Center（一時的な鍵）に切り替える
+4. **AWS の部品を作る**：SSH の鍵、Terraform の記録の置き場所、自分の IP アドレスを用意して、`terraform apply` する（[infra/README.md](infra/README.md)）
+5. **アプリを載せる**：`.\deploy\deploy.ps1`（[deploy/ec2/README.md](deploy/ec2/README.md)）
+
+Norton の「セーフウェブ」が暗号化された通信を点検していると、AWS CLI は証明書のエラーで、Terraform は「Plugin did not respond」で止まる。セーフウェブの除外に、`amazonaws.com`、`127.0.0.1`、`localhost`、`registry.terraform.io`、`releases.hashicorp.com` を登録する。
+
+### 日々の運用
+
+| やりたいこと | すること | 手順 |
+| --- | --- | --- |
+| 変えたものを載せる | main で `.\deploy\deploy.ps1`（画面だけなら `-Frontend`、サーバーだけなら `-Backend`） | [deploy/ec2/README.md](deploy/ec2/README.md) |
+| 載せた版がおかしい | `.\deploy\deploy.ps1 -Rollback`（動かない版は、載せたときに自動で戻る） | [deploy/ec2/README.md](deploy/ec2/README.md) |
+| 動いているか確かめる | `.\deploy\smoke-test.ps1` と、ブラウザで触る確認の一覧 | [deploy/ec2/README.md](deploy/ec2/README.md) |
+| 使わない日は止める・また動かす | EC2 と RDS を止める・動かす。動かしたあと `terraform apply -refresh-only` で、新しい IP アドレスを記録する | [infra/README.md](infra/README.md) |
+| 自宅の IP アドレスが変わった | `infra/terraform.tfvars` の `my_ip` を直して `terraform apply` | [infra/README.md](infra/README.md) |
+| RDS のパスワードが変わった（7 日ごと） | 自動で Spring Boot を起動し直す。つながらないときだけ手で起動し直す | [deploy/ec2/README.md](deploy/ec2/README.md) |
+| データを残す・戻す | EC2 で `pg_dump` し、パソコンに持ってくる | [deploy/ec2/README.md](deploy/ec2/README.md) |
+| 課題が終わった | `terraform destroy` で全部消す（RDS の中身も消える） | [infra/README.md](infra/README.md) |
+
+### 守ること
+
+- アクセスキー、パスワード、SSH の秘密鍵を、リポジトリにもチャットにも書かない。リポジトリは公開なので、AWS のアカウント番号と自分の IP アドレスも書かない
+- `terraform apply` と `terraform destroy` は、`terraform plan` を確かめてからにする。plan に `-`（消す）や `-/+`（消して作り直す）が出たら、止まって理由を確かめる
+- Terraform で作ったものの設定を、マネジメントコンソールや AWS CLI で直接変えない（止める・動かすのはよい）
+- デプロイは main から `deploy.ps1` で行う
+
 ## フォルダの構成
 
 ```text
@@ -244,6 +290,21 @@ taskmanegemento/
 │   │   └── App.tsx            画面の全体
 │   ├── .oxlintrc.json    コードの点検（Oxlint）のルール
 │   └── vite.config.ts    番地と、サーバーへの取り次ぎの設定
+├── infra/              AWS の部品を作る Terraform のコード
+│   ├── versions.tf         Terraform と AWS provider の版、記録（state）の置き場所
+│   ├── variables.tf        外から渡す値（自分の IP アドレスなど）
+│   ├── network.tf          EC2 のセキュリティグループ（つなげる相手の決まり）
+│   ├── compute.tf          EC2 と SSH の公開鍵
+│   ├── user_data.sh        EC2 が初めて起動したときに、Java と nginx を入れる
+│   ├── database.tf         RDS と、そのセキュリティグループ
+│   ├── iam.tf              EC2 の権限（RDS のパスワードを読むことだけ）
+│   ├── outputs.tf          作ったあとに表示する値（URL、SSH のコマンドなど）
+│   ├── terraform.tfvars.example  自分の IP アドレスを書くファイルの見本
+│   └── .terraform.lock.hcl       provider の版を固定する記録
+├── deploy/             AWS にアプリを載せるスクリプト
+│   ├── deploy.ps1          点検、ビルド、送る、入れ替える、確かめる（パソコンで動かす）
+│   ├── smoke-test.ps1      載せたあとの動作の確認
+│   └── ec2/                EC2 に置くもの（nginx の設定、Spring Boot の起動、入れ替え、パスワードの見張り）
 ├── .github/            プルリクエストのひな形と、自動の点検（GitHub Actions）の設定
 ├── .claude/skills/     Claude Code のスキル（サーバーの起動、品質のチェック）
 ├── db/testdata/        テスト用のデータを入れる SQL
@@ -251,6 +312,7 @@ taskmanegemento/
 ├── mock/               画面の見本（HTML、CSS、JavaScript だけで動く）
 ├── compose.yaml        データベースを動かす設定
 ├── .env.example        データベースの接続情報の見本
+├── .gitattributes      EC2 で動かすファイルの改行を LF に固定する設定
 └── CLAUDE.md           開発の進め方のルール
 ```
 
@@ -269,7 +331,14 @@ taskmanegemento/
 | [技術スタック](docs/技術スタック.md) | 使う技術と選んだ理由、選ばなかった技術 |
 | [受け入れ条件](docs/受け入れ条件.md) | 完成したかを確かめる条件 |
 
-データベースのバックアップと復元の手順書は、まだ作っていない。
+AWS で動かすための手順は、コードと同じフォルダに置いてある。
+
+| 文書 | 内容 |
+| --- | --- |
+| [infra/README.md](infra/README.md) | AWS の部品を作る・止める・動かす・片付ける手順 |
+| [deploy/ec2/README.md](deploy/ec2/README.md) | アプリを載せる、前の版に戻す、動作を確かめる、データを残す手順 |
+
+自分のパソコンのデータベースのバックアップと復元の手順書は、まだ作っていない。AWS のデータベース（RDS）の手順は、[deploy/ec2/README.md](deploy/ec2/README.md) にある。
 
 ## 開発の進め方
 
