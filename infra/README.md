@@ -1,9 +1,9 @@
 # infra（Terraform）
 
-AWS の上に、このアプリを動かす EC2 を作る Terraform のコード。
-考え方や全体の流れは [docs/aws-deployment-guide.md](../docs/aws-deployment-guide.md) に書いてある。
+AWS の上に、このアプリを動かす EC2 と RDS を作る Terraform のコード。
+考え方や全体の流れは [docs/aws-deployment-guide.md](../docs/aws-deployment-guide.md) に書いてある。アプリを載せる手順は [deploy/ec2/README.md](../deploy/ec2/README.md) にある。
 
-今の段で作るものは、次のとおり。アプリのデプロイは、あとの段で足す。
+作るものは、次のとおり。
 
 | ファイル | 作るもの |
 | --- | --- |
@@ -30,7 +30,7 @@ RDS は、いちばん小さい大きさでも月およそ 21 ドル（ディス
 
     パスフレーズを聞かれたら、何も入れずに Enter を2回押す。
 
-2. state の置き場所（S3 バケット）を作る。手順は [docs/aws-deployment-guide.md](../docs/aws-deployment-guide.md) の 5-1
+2. state の置き場所（S3 バケット）を作る。手順は [docs/aws-deployment-guide.md](../docs/aws-deployment-guide.md) の 5-2
 
 3. `infra/terraform.tfvars.example` を `infra/terraform.tfvars` にコピーし、`my_ip` を自分の IP アドレスに書き換える
 
@@ -54,7 +54,7 @@ terraform -chdir=infra apply
 
 `apply` が終わると、`app_url` にブラウザで開く URL、`ssh_command` に SSH で入るコマンドが表示される。
 
-- ブラウザで `app_url` を開くと、nginx の初期画面が出る
+- アプリを載せる前に `app_url` を開くと、nginx の初期画面が出る。アプリは [deploy/ec2/README.md](../deploy/ec2/README.md) の `deploy.ps1` で載せる
 - SSH で入ったら、Java が入っているかを確かめる
 
 ```powershell
@@ -73,7 +73,7 @@ RDS はインターネットから入れないので、EC2 に SSH で入って�
 sudo dnf install -y postgresql18
 
 # パスワードを Secrets Manager から読み、RDS につないで版を表示する
-export PGPASSWORD=$(aws secretsmanager get-secret-value --secret-id '<db_secret_arn>' --query SecretString --output text | python3 -c 'import json,sys; print(json.load(sys.stdin)["password"])')
+export PGPASSWORD=$(aws secretsmanager get-secret-value --region ap-northeast-1 --secret-id '<db_secret_arn>' --query SecretString --output text | python3 -c 'import json,sys; print(json.load(sys.stdin)["password"])')
 psql "host=<db_endpoint> dbname=taskmanagement user=taskmanagement sslmode=require" -c 'select version();'
 unset PGPASSWORD
 ```
@@ -81,11 +81,23 @@ unset PGPASSWORD
 ## 使わない日は止める
 
 ```powershell
-aws ec2 stop-instances --instance-ids <instance_id>
+$id = terraform -chdir=infra output -raw instance_id
+
+# 止める
+aws ec2 stop-instances --instance-ids $id
 aws rds stop-db-instance --db-instance-identifier taskmanagement-db
+
+# また動かす（RDS が先）
+aws rds start-db-instance --db-instance-identifier taskmanagement-db
+aws ec2 start-instances --instance-ids $id
+
+# 動かしたあと、Terraform の記録を新しくする
+terraform -chdir=infra apply -refresh-only
 ```
 
-RDS は止めても 7 日たつと自動で動き出すので、長く使わないときは片付ける。EC2 は、止めて動かすと公開 IP アドレスが変わる。
+EC2 は、止めて動かすと公開 IP アドレスが変わる。`deploy.ps1` や `terraform output` は Terraform の記録から IP アドレスを読むので、動かしたあとは `terraform apply -refresh-only` で記録を新しくする。これは記録を新しくするだけで、AWS の上のものは何も変えない。
+
+RDS は止めても 7 日たつと自動で動き出すので、長く使わないときは片付ける。
 
 ## 自宅の IP アドレスが変わったとき
 
@@ -96,3 +108,5 @@ SSH や画面がつながらなくなったら、`terraform.tfvars` の `my_ip` 
 ```powershell
 terraform -chdir=infra destroy
 ```
+
+RDS の中身は消え、戻せない（消すときにバックアップを取らない設定）。残したいときは、先に [docs/aws-deployment-guide.md](../docs/aws-deployment-guide.md) の 6-7 でバックアップを取る。
