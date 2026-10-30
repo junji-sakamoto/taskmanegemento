@@ -7,6 +7,9 @@
 *.tfstate.*
 # 自分の IP アドレスなどを書くファイル
 *.tfvars
+# terraform plan -out で保存した plan（AWS の情報が入る）
+tfplan
+*.tfplan
 # 一時的に設定を上書きするファイル
 override.tf
 *_override.tf
