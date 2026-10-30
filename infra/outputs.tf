@@ -13,6 +13,16 @@ output "app_url" {
   value       = "http://${aws_instance.app.public_ip}/"
 }
 
+output "db_endpoint" {
+  description = "RDS の接続先。EC2 の中からだけつながる"
+  value       = aws_db_instance.db.address
+}
+
+output "db_secret_arn" {
+  description = "RDS のパスワードを置いた Secrets Manager の場所"
+  value       = aws_db_instance.db.master_user_secret[0].secret_arn
+}
+
 output "ssh_command" {
   description = "EC2 に SSH で入るコマンド"
   value       = "ssh -i ~/.ssh/taskmanagement-ec2 ec2-user@${aws_instance.app.public_ip}"

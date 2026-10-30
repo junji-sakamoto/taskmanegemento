@@ -20,6 +20,12 @@ variable "instance_type" {
   default     = "t4g.small"
 }
 
+variable "db_instance_class" {
+  description = "RDS の大きさ。いちばん小さい db.t4g.micro でも月およそ 18 ドルかかる"
+  type        = string
+  default     = "db.t4g.micro"
+}
+
 variable "ssh_public_key_path" {
   description = "AWS に登録する SSH の公開鍵のファイル。秘密鍵はパソコンにだけ置く"
   type        = string
