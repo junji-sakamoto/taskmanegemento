@@ -140,6 +140,27 @@ sudo tail -n 30 /var/log/nginx/error.log
 
 起動には 10〜20 秒ほどかかる。起動したときに、Flyway が RDS にテーブルを作る。
 
+## データを残す・戻す
+
+RDS の中身を、SQL のファイルとしてパソコンに残す。RDS はインターネットから入れないので、EC2 に SSH で入って書き出し、パソコンに持ってくる。
+
+EC2 の中で書き出す。`pg_dump` がなければ、先に `sudo dnf install -y postgresql18` で入れる。
+
+```bash
+source /opt/taskmanagement/app.env
+export PGPASSWORD=$(aws secretsmanager get-secret-value --region ap-northeast-1 --secret-id "$DB_SECRET_ARN" --query SecretString --output text | python3 -c 'import json,sys; print(json.load(sys.stdin)["password"])')
+pg_dump "host=$DB_HOST dbname=taskmanagement user=taskmanagement sslmode=require" > ~/taskmanagement-backup.sql
+unset PGPASSWORD
+```
+
+パソコンに持ってくる。リポジトリの外（ドキュメントなど）に置く。
+
+```powershell
+scp -i ~/.ssh/taskmanagement-ec2 "ec2-user@$(terraform -chdir=infra output -raw public_ip):taskmanagement-backup.sql" "$HOME\Documents\taskmanagement-backup.sql"
+```
+
+戻すときは、RDS を作り直した直後、アプリを載せる前に、ファイルを EC2 に送って `psql "host=$DB_HOST dbname=taskmanagement user=taskmanagement sslmode=require" -f ~/taskmanagement-backup.sql` で流す（上と同じく、`app.env` と `PGPASSWORD` を用意してから）。そのあとアプリを載せると、Flyway は記録を見て、テーブルを作り直さずに起動する。
+
 ## 気をつけること
 
 - RDS のパスワードは、RDS が 7 日ごとに自動で変える。Spring Boot は起動したときに読んだパスワードを使い続けるので、そのままでは、変わったあとにデータベースにつながらなくなる。そこで、次の仕組みで自動で起動し直す
@@ -148,4 +169,4 @@ sudo tail -n 30 /var/log/nginx/error.log
     - パスワードが変わってから起動し直すまで、最大 5 分ほどと、起動し直す 10 秒ほど、データベースにつながらないことがある
     - 動いた記録は `sudo journalctl -u taskmanagement-secret-watch.service` で見られる
     - それでもつながらないときは、`sudo systemctl restart taskmanagement` で手で起動し直す
-- `.sh` と `.service` の改行は LF にしておく（`.gitattributes`）。CRLF になると EC2 で動かない
+- `.sh`、`.service`、`.timer` の改行は LF にしておく（`.gitattributes`）。CRLF になると EC2 で動かない

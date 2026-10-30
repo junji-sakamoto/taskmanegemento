@@ -1,7 +1,7 @@
 # infra（Terraform）
 
 AWS の上に、このアプリを動かす EC2 と RDS を作る Terraform のコード。
-考え方や全体の流れは [docs/aws-deployment-guide.md](../docs/aws-deployment-guide.md) に書いてある。アプリを載せる手順は [deploy/ec2/README.md](../deploy/ec2/README.md) にある。
+インフラ構成図と部品ごとの設定は [docs/技術スタック.md](../docs/技術スタック.md) 5章、準備と運用の全体は [README](../README.md) の「AWS で動かす」にある。アプリを載せる手順は [deploy/ec2/README.md](../deploy/ec2/README.md) にある。
 
 作るものは、次のとおり。
 
@@ -30,7 +30,19 @@ RDS は、いちばん小さい大きさでも月およそ 21 ドル（ディス
 
     パスフレーズを聞かれたら、何も入れずに Enter を2回押す。
 
-2. state の置き場所（S3 バケット）を作る。手順は [docs/aws-deployment-guide.md](../docs/aws-deployment-guide.md) の 5-2
+2. Terraform の記録（state）の置き場所（S3 バケット）を作る。Terraform 自身の記録を入れる場所なので、Terraform より先に AWS CLI で作る
+
+    ```powershell
+    $account = aws sts get-caller-identity --query Account --output text
+    $bucket = "taskmanagement-tfstate-$account"
+    aws s3api create-bucket --bucket $bucket --region ap-northeast-1 --create-bucket-configuration LocationConstraint=ap-northeast-1
+    # 上書きしても前の版に戻せるようにする
+    aws s3api put-bucket-versioning --bucket $bucket --versioning-configuration Status=Enabled
+    # インターネットに公開されないようにする
+    aws s3api put-public-access-block --bucket $bucket --public-access-block-configuration BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true
+    ```
+
+    このバケットは Terraform の外で作るので、`terraform destroy` では消えない
 
 3. `infra/terraform.tfvars.example` を `infra/terraform.tfvars` にコピーし、`my_ip` を自分の IP アドレスに書き換える
 
@@ -109,4 +121,4 @@ SSH や画面がつながらなくなったら、`terraform.tfvars` の `my_ip` 
 terraform -chdir=infra destroy
 ```
 
-RDS の中身は消え、戻せない（消すときにバックアップを取らない設定）。残したいときは、先に [docs/aws-deployment-guide.md](../docs/aws-deployment-guide.md) の 6-7 でバックアップを取る。
+RDS の中身は消え、戻せない（消すときにバックアップを取らない設定）。残したいときは、先に [deploy/ec2/README.md](../deploy/ec2/README.md) の「データを残す・戻す」でバックアップを取る。
