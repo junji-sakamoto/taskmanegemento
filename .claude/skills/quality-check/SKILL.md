@@ -1,17 +1,18 @@
 ---
 name: quality-check
-description: このアプリの品質をチェック（レビュー）する。フロントエンドは Lint・ビルド・React のアンチパターン、バックエンドは Checkstyle・ビルド・Spring Boot のアンチパターン、さらに設計書と実装のずれを点検する。品質チェック、品質管理、コードレビュー、「標準から外れていないか見て」「設計書と実装が合っているか見て」と言われたときに必ず使う。
+description: このアプリの品質をチェック（レビュー）する。フロントエンドは Lint・ビルド・React のアンチパターン、バックエンドは Checkstyle・ビルド・Spring Boot のアンチパターン、インフラは Terraform（fmt・validate・plan）とデプロイのスクリプトと AWS の設定の安全さ、さらに設計書と実装のずれを点検する。品質チェック、品質管理、コードレビュー、「標準から外れていないか見て」「設計書と実装が合っているか見て」「Terraform を点検して」と言われたときに必ず使う。
 ---
 
 # 品質をチェックする
 
-このアプリの品質を、次の3つの区分で点検する。
+このアプリの品質を、次の4つの区分で点検する。
 
 | 区分 | 点検すること |
 | --- | --- |
 | (1) フロントエンド | Lint の実行、ビルドの確認、React のアンチパターンのチェック |
 | (2) バックエンド | Checkstyle の実行、ビルドの確認、Spring Boot のアンチパターンのチェック |
 | (3) ドキュメントの整合性 | 設計書と実装のずれのチェック |
+| (4) インフラ | Terraform の書き方・文法・実際の AWS との差、デプロイのスクリプトの文法、AWS の設定の安全さのチェック |
 
 どの区分も、**コマンドで自動で点検できるもの**を先に実行し、そのあとで**チェックリストを目で確かめる**。
 
@@ -21,6 +22,7 @@ description: このアプリの品質をチェック（レビュー）する。�
 - 直すときは、CLAUDE.md の流れ（イシュー → ブランチ → コミット → プルリクエスト）で行う。
 - コマンドが失敗したときは、失敗したことと、その出力をそのまま報告する。「たぶん大丈夫」とまとめない。
 - 指摘には、必ず理由を付ける。「どの文書の何章と違うか」「どの標準（React の公式の説明、Spring Boot の公式の説明など）から外れているか」を書く。
+- インフラの点検では、AWS の上のものを変えない。`terraform apply`、`terraform destroy`、デプロイ（`deploy.ps1`）は実行しない。`terraform plan` までにする。
 
 ## (1) フロントエンド
 
@@ -113,12 +115,75 @@ npm run build
 | `docs/基本設計書.md` | `frontend/src/repository/`、`backend/.../*Controller.java` | 保存係の仕事（1.3）、窓口の方法・パス・送るデータ・状態コード（3章） |
 | `docs/データ設計.md` | `backend/src/main/resources/db/migration/`、`*.java` のエンティティ、`frontend/src/types.ts` | テーブルの列・型・決まり（3.3）、並び順の振り直し（3.4）、データの形（2.2） |
 | `docs/技術スタック.md` | `frontend/package.json`、`backend/build.gradle`、`compose.yaml` | 使っている道具と、そのバージョン（4章） |
-| `docs/非機能要件.md` | 設定ファイル | ログ（4章）、受け付ける範囲（6章）、点検の道具（7章） |
-| `README.md` | 全体 | 「今できていること」の表、起動のしかた、コマンド |
+| `docs/非機能要件.md` | 設定ファイル、`infra/*.tf` | ログ（4章）、受け付ける範囲（6章。AWS では、セキュリティグループと RDS の公開の設定）、点検の道具（7章） |
+| `docs/技術スタック.md` | `infra/*.tf`、`infra/.terraform.lock.hcl`、EC2 の上 | AWS で使っているサービスと構成（5章）、その版（4.6） |
+| `docs/基本設計書.md` | `infra/*.tf`、`deploy/ec2/nginx.conf` | AWS で動かすときのシステム構成（1章） |
+| `README.md` | 全体 | 「今できていること」の表、起動のしかた、コマンド、AWS で動かすときの説明、フォルダの構成 |
+| `infra/README.md` | `infra/*.tf`、`terraform output` | 作るものの表、コマンド、output の名前 |
+| `deploy/ec2/README.md` | `deploy/*.ps1`、`deploy/ec2/*` | ファイルの表、`deploy.ps1` の指定（`-Frontend` など）と進む順、自動の確認の中身 |
 
 - ずれを見つけたら、**実装を正として文書を直すか、文書を正として実装を直すか**を、ユーザーに確かめる。
 - まだ作っていない機能（例：バックアップ）は、ずれではなく「未実装」として分けて報告する。
 - 文書を直したときは、Mermaid の図が壊れていないかも確かめる。
+- 文書の中のリンク（`[文書](ファイル)` や `#見出し`）の先が、あるかも確かめる。
+
+## (4) インフラ
+
+リポジトリの一番上のフォルダで、PowerShell で実行する。`terraform plan` は AWS に読みに行くので、AWS CLI でログインしておく（`aws sts get-caller-identity` で確かめる）。
+
+### 4-1 Terraform の書き方と文法
+
+```powershell
+terraform -chdir=infra fmt -check -recursive
+terraform -chdir=infra validate
+```
+
+- `fmt -check` は、書き方がそろっていないファイルの名前を表示して失敗する。直すときは `terraform -chdir=infra fmt`。
+- `validate` の前に `terraform init` が要る（`infra/.terraform` がないとき）。init の手順は `infra/README.md`。
+
+### 4-2 実際の AWS との差（ドリフト）
+
+```powershell
+terraform -chdir=infra plan -detailed-exitcode
+```
+
+- 終わり方が 0 なら差がない。2 なら差がある。差があれば、どの部品の何が違うかを報告する。
+- `-/+`（消して作り直す）や `-`（消す）が出たときは、特に重く扱う。RDS が作り直されるとデータが消える。
+- 差は、コードを変えたのにまだ apply していないときにも出る。main のコードと比べているかを確かめる。
+
+### 4-3 デプロイのスクリプトの文法
+
+```powershell
+# シェルスクリプト（EC2 で動くもの）。Git に付いてくる bash で文法だけを確かめる
+$bash = Join-Path (Split-Path (Split-Path (Get-Command git).Source)) 'bin\bash.exe'
+Get-ChildItem deploy/ec2/*.sh, infra/*.sh | ForEach-Object { & $bash -n $_.FullName; "$($_.Name): $LASTEXITCODE" }
+
+# PowerShell のスクリプト（パソコンで動くもの）
+Get-ChildItem deploy/*.ps1 | ForEach-Object { $errs = $null; $null = [System.Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$null, [ref]$errs); "$($_.Name): 誤り $($errs.Count) 件" }
+```
+
+- tflint、shellcheck、PSScriptAnalyzer は入れていない。入れたときは、これらも使う。
+- 動かしてみる確かめ（デプロイ、`smoke-test.ps1`）は、ユーザーに頼まれたときだけ行う。
+
+### 4-4 Terraform と AWS の設定のチェック（目で確かめる）
+
+| 観点 | 良くない例 | 正しい形 |
+| --- | --- | --- |
+| 公開してはいけない値 | アクセスキー、パスワード、秘密鍵、AWS のアカウント番号、自分の IP アドレスを、`.tf` や文書やコミットに書く | リポジトリは公開なので書かない。IP アドレスは `terraform.tfvars`（Git に入れない）、state のバケット名は `terraform init -backend-config` で渡す |
+| パスワード | `password = "..."` を書く。Terraform の state にパスワードが残る | RDS に作らせて Secrets Manager に置く（`manage_master_user_password = true`） |
+| 外からの入り口 | セキュリティグループの入る側に `0.0.0.0/0` がある。使わない番地を開ける | 入る側は `my_ip` の `/32` だけ。8080（Spring Boot）と 5432（PostgreSQL）は外に開けない（docs/非機能要件.md 6章） |
+| データベースへの入り口 | RDS の 5432 番を IP アドレスで許可する。`publicly_accessible = true` | EC2 のセキュリティグループからだけ許可する（`referenced_security_group_id`）。`publicly_accessible = false` |
+| 暗号化 | ディスクや RDS が暗号化されていない | `encrypted = true`、`storage_encrypted = true` |
+| EC2 の情報の読み方 | インスタンスの情報を、トークンなしで読める（IMDSv1） | `http_tokens = "required"`（IMDSv2） |
+| 権限 | IAM ロールに `*`（何でもできる）を付ける | 要る操作と相手だけを書く（`iam.tf` のように、パスワードを読むことだけ） |
+| 費用 | t4g などの CPU クレジットを `unlimited` のままにする。大きすぎる型を使う | `cpu_credits = "standard"`。無料の対象の型を使う（docs/技術スタック.md 5章） |
+| 版の固定 | provider の版を書かない。`.terraform.lock.hcl` を Git に入れない | `required_providers` に版の範囲を書き、`.terraform.lock.hcl` を Git に入れる |
+| イメージ | AMI の ID を直接書く | SSM のパラメーターで最新を読む。作り直しを避けるため `ignore_changes = [ami]` |
+| 作り直しになる項目 | 変わると作り直しになる項目（`user_data` など）を、そうと知らずに変える | 作り直しになることを、コメントと plan で確かめる。止めている EC2 で差が出る項目にも気をつける |
+| state と秘密のファイル | `*.tfstate`、`*.tfvars`、保存した plan（`tfplan`）を Git に入れる | `.gitignore` に入っているかを確かめる |
+| 改行 | EC2 で動く `.sh`、`.service`、`.timer` が CRLF になる | `.gitattributes` で LF に固定する |
+| スクリプトの止まり方 | シェルスクリプトで失敗しても先へ進む | `set -euo pipefail`。PowerShell は `$ErrorActionPreference = 'Stop'` と `$PSNativeCommandUseErrorActionPreference = $true` |
+| デプロイの安全さ | main 以外や、コミットしていない変更を載せる。失敗したら戻せない | `deploy.ps1` の事前の確認と、前の版への戻し（docs: `deploy/ec2/README.md`） |
 
 ## 報告のしかた
 
@@ -130,5 +195,6 @@ npm run build
 | 区分 | 問題 | 理由（どの文書か、どの標準か） | 直し方 | 重さ |
 | --- | --- | --- | --- | --- |
 | フロントエンド | （例）effect の依存配列に使わない値がある | React の公式の説明では、依存配列には effect の中で使う値をすべて入れる | ボタンの処理をイベントハンドラーへ移す | 中 |
+| インフラ | （例）セキュリティグループで 8080 番を外に開けている | docs/非機能要件.md 6章では、Spring Boot は EC2 の中からだけつながる | ルールを消し、nginx を通す | 高 |
 
 3. 良くできている点も、短く添える
