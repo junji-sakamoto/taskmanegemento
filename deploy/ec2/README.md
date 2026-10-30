@@ -7,6 +7,8 @@
 | `nginx.conf` | 画面のファイルを 80 番で配り、`/api` を Spring Boot へ取り次ぐ（パソコンでの Vite と同じ役目） |
 | `start.sh` | RDS のパスワードを起動のたびに Secrets Manager から読み、接続先を RDS にして Spring Boot を起動する |
 | `taskmanagement.service` | systemd の設定。EC2 を起動し直しても自動で動き出す。専用のユーザー `taskmanagement` で動かす |
+| `secret-watch.sh` | RDS のパスワードが変わったら、Spring Boot を起動し直す（下の「気をつけること」） |
+| `taskmanagement-secret-watch.service`、`.timer` | `secret-watch.sh` を 5 分ごとに動かす systemd の設定 |
 | `install.sh` | EC2 に送ったファイルを置き場所に移し、入れ替えたもの（Spring Boot か nginx）を起動し直す。動かなければ前の版に戻す。`deploy/deploy.ps1` から呼ばれる |
 
 アプリのコードと `application.properties` は変えない。パソコンでは `.env` から読んでいるデータベースの接続情報を、EC2 では `start.sh` が環境変数で渡す。
@@ -140,5 +142,10 @@ sudo tail -n 30 /var/log/nginx/error.log
 
 ## 気をつけること
 
-- RDS のパスワードは、RDS が 7 日ごとに自動で変える。Spring Boot は起動したときにパスワードを読むので、変わったあとにデータベースにつながらなくなったら、`sudo systemctl restart taskmanagement` で起動し直す
+- RDS のパスワードは、RDS が 7 日ごとに自動で変える。Spring Boot は起動したときに読んだパスワードを使い続けるので、そのままでは、変わったあとにデータベースにつながらなくなる。そこで、次の仕組みで自動で起動し直す
+    - `start.sh` が、起動したときに使ったパスワードの版（Secrets Manager の VersionId）を `/opt/taskmanagement/secret-version` に記録する
+    - `taskmanagement-secret-watch.timer` が 5 分ごとに `secret-watch.sh` を動かし、今の版が記録と違えば Spring Boot を起動し直す
+    - パスワードが変わってから起動し直すまで、最大 5 分ほどと、起動し直す 10 秒ほど、データベースにつながらないことがある
+    - 動いた記録は `sudo journalctl -u taskmanagement-secret-watch.service` で見られる
+    - それでもつながらないときは、`sudo systemctl restart taskmanagement` で手で起動し直す
 - `.sh` と `.service` の改行は LF にしておく（`.gitattributes`）。CRLF になると EC2 で動かない

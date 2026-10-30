@@ -57,6 +57,10 @@ install_backend() {
   install -m 755 "$src/start.sh" "$dir/start.sh"
   install -m 644 "$src/taskmanagement.service" /etc/systemd/system/taskmanagement.service
 
+  # RDS のパスワードが変わったら、Spring Boot を起動し直す仕組み（5 分ごとに確かめる）
+  install -m 755 "$src/secret-watch.sh" "$dir/secret-watch.sh"
+  install -m 644 "$src/taskmanagement-secret-watch.service" "$src/taskmanagement-secret-watch.timer" /etc/systemd/system/
+
   # 接続先を書く。パスワードは書かない
   printf 'DB_HOST=%s\nDB_SECRET_ARN=%s\n' "$db_host" "$db_secret_arn" >"$dir/app.env"
   chmod 644 "$dir/app.env"
@@ -64,6 +68,7 @@ install_backend() {
   systemctl daemon-reload
   systemctl enable taskmanagement
   systemctl restart taskmanagement
+  systemctl enable --now taskmanagement-secret-watch.timer
   echo "$version" >"$dir/version-backend"
 
   if ! wait_backend; then

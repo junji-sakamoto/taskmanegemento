@@ -6,10 +6,13 @@ set -euo pipefail
 # 接続先（DB_HOST）とパスワードの置き場所（DB_SECRET_ARN）。install.sh が書く
 source /opt/taskmanagement/app.env
 
-secret=$(aws secretsmanager get-secret-value --region ap-northeast-1 --secret-id "$DB_SECRET_ARN" --query SecretString --output text)
+secret=$(aws secretsmanager get-secret-value --region ap-northeast-1 --secret-id "$DB_SECRET_ARN" --output json)
 read_secret() {
-  python3 -c "import json,sys; print(json.load(sys.stdin)['$1'])" <<<"$secret"
+  python3 -c "import json,sys; print(json.loads(json.load(sys.stdin)['SecretString'])['$1'])" <<<"$secret"
 }
+
+# 使ったパスワードの版を記録する。変わったら secret-watch.sh が起動し直す
+python3 -c "import json,sys; print(json.load(sys.stdin)['VersionId'])" <<<"$secret" >/opt/taskmanagement/secret-version
 
 # application.properties が読む値。パソコンでは .env から読んでいるもの
 export POSTGRES_DB=taskmanagement
