@@ -1,0 +1,17 @@
+# EC2 で Spring Boot を動かす systemd の設定。install.sh が /etc/systemd/system に置く
+[Unit]
+Description=taskmanagement (Spring Boot)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+# アプリ専用のユーザーで動かす（ログインはできない）
+User=taskmanagement
+# ログは /opt/taskmanagement/logs/taskmanagement.log に書かれる（application.properties）
+WorkingDirectory=/opt/taskmanagement
+ExecStart=/opt/taskmanagement/start.sh
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

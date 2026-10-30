@@ -1,0 +1,4 @@
+# EC2（Linux）で動かすファイルは、Windows で取り出しても改行を LF のままにする。
+# CRLF になると、シェルスクリプトや systemd の設定が動かなくなる
+*.sh text eol=lf
+*.service text eol=lf
