@@ -8,6 +8,11 @@ output "public_ip" {
   value       = aws_instance.app.public_ip
 }
 
+output "app_url" {
+  description = "ブラウザで開く URL。自分の IP アドレスからだけ開ける"
+  value       = "http://${aws_instance.app.public_ip}/"
+}
+
 output "ssh_command" {
   description = "EC2 に SSH で入るコマンド"
   value       = "ssh -i ~/.ssh/taskmanagement-ec2 ec2-user@${aws_instance.app.public_ip}"
