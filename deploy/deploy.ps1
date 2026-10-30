@@ -133,9 +133,9 @@ try {
         }
     }
 
-    Write-Step "動いているか確かめる"
+    Write-Step "動いているか確かめる（deploy/smoke-test.ps1）"
     $baseUrl = "http://$ip"
-    # Spring Boot は起動に 10〜20 秒かかるので、60 秒まで待つ
+    # Spring Boot は起動に 10〜20 秒かかるので、答えるようになるまで 60 秒まで待つ
     $deadline = (Get-Date).AddSeconds(60)
     while ($true) {
         try {
@@ -151,8 +151,8 @@ try {
             Start-Sleep -Seconds 3
         }
     }
-    $page = Invoke-WebRequest "$baseUrl/" -UseBasicParsing -TimeoutSec 5
-    Write-Host "画面: HTTP $($page.StatusCode)、API: 答えた"
+    # 画面、カードの追加・編集・移動・削除まで確かめる
+    & (Join-Path $PSScriptRoot 'smoke-test.ps1') -BaseUrl $baseUrl
     $versions = ssh @sshOptions "ec2-user@$ip" "cat /opt/taskmanagement/version-frontend /opt/taskmanagement/version-backend"
     Write-Host "EC2 の版: 画面 $($versions[0])、サーバー $($versions[1])"
 
