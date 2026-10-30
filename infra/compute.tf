@@ -32,9 +32,13 @@ resource "aws_instance" "app" {
     http_tokens = "required"
   }
 
-  # 初めて起動したときに Java 25 を入れる。
+  # 初めて起動したときに Java 25 と nginx を入れる。
   # Windows で取り出すと改行が CRLF になることがあるので、LF にそろえて渡す
   user_data = replace(file("${path.module}/user_data.sh"), "\r\n", "\n")
+
+  # user_data.sh は初めて起動したときにしか動かないので、中身を変えたら EC2 を作り直す。
+  # EC2 の中のデータも消えるので、データを置くようになったら見直す
+  user_data_replace_on_change = true
 
   # 新しいイメージが出るたびに、作り直されないようにする
   lifecycle {
