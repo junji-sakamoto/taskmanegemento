@@ -1,5 +1,5 @@
 #!/bin/bash
-# EC2 の上で、/tmp に送ったファイルを置き場所に移し、Spring Boot を起動し直す。
+# EC2 の上で、/tmp に送ったファイルを置き場所に移し、Spring Boot と nginx を起動し直す。
 # 使い方: sudo bash /tmp/install.sh <RDS の接続先> <パスワードを置いた Secrets Manager の ARN>
 set -euo pipefail
 
@@ -22,3 +22,16 @@ chmod 644 "$dir/app.env"
 systemctl daemon-reload
 systemctl enable taskmanagement
 systemctl restart taskmanagement
+
+# 画面のファイルを入れ替える。前のファイルは残さない
+rm -rf "$dir/frontend"
+cp -r /tmp/dist "$dir/frontend"
+chmod -R a+rX "$dir/frontend"
+
+# nginx の設定を置き、書き方に誤りがないか確かめてから読み直す
+install -m 644 /tmp/nginx.conf /etc/nginx/conf.d/taskmanagement.conf
+nginx -t
+systemctl reload nginx
+
+# 送ってきたファイルを片付ける（次に送るとき、/tmp/dist の中に dist ができないように）
+rm -rf /tmp/dist /tmp/app.jar /tmp/start.sh /tmp/taskmanagement.service /tmp/nginx.conf
