@@ -1,0 +1,4 @@
+# このファイルを terraform.tfvars という名前でコピーし、自分の値に書き換える。
+# terraform.tfvars は Git に入れない（.gitignore）。
+# 今の IP アドレスは (Invoke-RestMethod https://checkip.amazonaws.com).Trim() で調べられる。
+my_ip = "203.0.113.10"

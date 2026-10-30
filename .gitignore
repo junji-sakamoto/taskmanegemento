@@ -1,2 +1,12 @@
 # データベースのパスワードを書いたファイル
 .env
+
+# Terraform が作るファイル（state には AWS の情報が入る）
+.terraform/
+*.tfstate
+*.tfstate.*
+# 自分の IP アドレスなどを書くファイル
+*.tfvars
+# 一時的に設定を上書きするファイル
+override.tf
+*_override.tf
